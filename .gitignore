@@ -17,3 +17,5 @@ dist/
 .vscode/
 .DS_Store
 Thumbs.db
+# nested clone (사용자가 실수로 clone한 폴더, 동일 repo)
+/wp-auto/
