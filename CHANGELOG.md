@@ -8,9 +8,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- W5: GSC API 연동 + 월간 리포트
-- W6: GitHub Actions cron (CWV 자동 측정)
-- W7~W8: 안정화, 외부 사용자 온보딩
+- v0.4.0: 안정화 (테스트 커버리지 80%, Docker 옵션, README 보강)
+- v1.0.0: 외부 공개 가능 상태 (의존성 핀 고정, 시그너처, GitHub Pages 문서)
+
+## [0.3.0] - 2026-08-02
+
+### Added — Phase 4: Web UI (1인 self-use)
+
+**FastAPI 기반 로컬 웹 UI**
+- `wp_auto/web/server.py` — FastAPI app factory + uvicorn 진입점
+  - `wp-auto ui` 명령으로 시작 (기본 `http://127.0.0.1:8765`)
+  - `WP_AUTO_PORT` 환경변수로 포트 변경 가능 (예: 8765 충돌 시 7777)
+  - localhost only, 인증 없음 (1인 self-use)
+- `wp_auto/web/routes.py` — 7개 페이지 + 7개 API
+  - `GET /` — 대시보드 (최근 발행 5개)
+  - `GET /verify` + `POST /api/verify` — 콘텐츠 + (--full) SEO 통합 점수화
+  - `GET /generate` + `POST /api/generate` — Ollama AI 초안 생성 (1~3분)
+  - `GET /publish` + `POST /api/publish` — 점수화 게이트 + WP 발행
+  - `GET /optimize` + `POST /api/optimize` — Pillow 이미지 WebP/AVIF
+  - `GET /measure` + `POST /api/measure` — Playwright CWV (LCP/INP/CLS)
+  - `GET /settings` + `GET /api/posts` + `GET /api/health` — 설정 + 글 목록 + 헬스 체크
+- `wp_auto/web/templates/` — 7개 HTML (base + 6 페이지)
+  - TailwindCSS CDN (빌드 불필요)
+  - vanilla JS (AJAX, 진행 표시, 결과 렌더링)
+- `wp_auto/cli/ui.py` — `wp-auto ui` CLI 명령
+  - `--port`, `--host`, `--reload` 옵션
+- `tests/unit/test_web.py` — 18개 (FastAPI TestClient, 7개 페이지 + 7개 API + 404 + 정적 자산)
+
+### Tested
+- **149 passed** in 6.32s
+  - 기존 131 + web 18
+- ruff: All checks passed
+- 7개 페이지 라이브 검증: 200 OK (`/api/health` 정상 응답)
+
+### Project Structure (v0.3.0)
+```
+wp-auto/
+├── wp_auto/
+│   ├── ai/                       # W2: LLM 통합
+│   ├── cli/
+│   │   ├── main.py                # 최상위 (--version, doctor, example, verify, publish, list-posts, ui)
+│   │   ├── verify.py              # 콘텐츠 + SEO 점수화
+│   │   ├── publish.py             # WP 발행 (Mock/Real)
+│   │   └── ui.py                  # v0.3.0: Web UI 시작
+│   ├── core/                      # 점수화, SEO 분석
+│   ├── optimize/                  # W3: 이미지, lazy, CWV
+│   ├── wp/                        # W4: WP 연동
+│   └── web/                       # v0.3.0: FastAPI UI
+│       ├── server.py
+│       ├── routes.py
+│       └── templates/             # 7개 HTML
+└── tests/unit/                    # 8개 파일, 149개 테스트
+```
+
+### Notes
+- 1인 self-use 패턴 확정: 도구 우선 빌드 + HTML UI + 로컬 PC + localhost only
+- 8000/9000 포트 점유 중 → 8765 기본, 충돌 시 환경변수 `WP_AUTO_PORT` 또는 CLI `--port`
+- W5/W6 (분석/자동화) 보류 — 1인용 ROI 낮음, score history만 슬림 버전으로 추후 검토
+- 외부 공개 시(v1.0) 풀 W5/W6 + Docker + 문서 사이트
+
+## [0.2.0] - 2026-08-02
 
 ## [0.2.0] - 2026-08-02
 
