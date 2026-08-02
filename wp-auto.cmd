@@ -40,10 +40,17 @@ if errorlevel 1 (
     exit /b 1
 )
 
-python -m wp_auto %*
+REM 인자 없으면 기본 명령 = 'ui' (Web UI 자동 시작, 1인 self-use 메인 진입점)
+if "%1"=="" (
+    python -m wp_auto ui
+) else (
+    python -m wp_auto %*
+)
 set EXITCODE=%errorlevel%
 
 REM 'ui' runs a long-lived server (no pause). Other commands show output then pause.
-if /i not "%1"=="ui" pause
+if /i not "%1"=="ui" (
+    if not "%1"=="" pause
+)
 
 exit /b %EXITCODE%
