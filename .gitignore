@@ -8,6 +8,7 @@ __pycache__/
 .mypy_cache/
 data/
 logs/
+out/
 *.db
 *.egg-info/
 build/
