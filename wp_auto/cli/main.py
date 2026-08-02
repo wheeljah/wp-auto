@@ -13,6 +13,7 @@ from loguru import logger
 
 from wp_auto import __version__
 from wp_auto.cli.publish import list_posts_cmd, publish
+from wp_auto.cli.ui import ui
 from wp_auto.cli.verify import verify
 from wp_auto.core.content_score import (
     ContentMetrics,
@@ -126,6 +127,9 @@ cli.add_command(verify, name="verify")
 # W4에서 추가: publish, list-posts
 cli.add_command(publish, name="publish")
 cli.add_command(list_posts_cmd, name="list-posts")
+
+# v0.3.0: Web UI
+cli.add_command(ui, name="ui")
 
 
 if __name__ == "__main__":

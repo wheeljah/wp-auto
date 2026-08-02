@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}점수화{% endblock %}
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold">콘텐츠 점수화</h1>
+        <p class="text-sm text-slate-600 mt-1">HTML 입력 → 콘텐츠 + (선택) SEO 통합 점수</p>
+    </div>
+
+    <form id="verify-form" class="bg-white border border-slate-200 rounded-lg p-5 space-y-4">
+        <div>
+            <label class="block text-sm font-medium mb-1">HTML</label>
+            <textarea name="html" id="html" rows="12" required
+                class="w-full px-3 py-2 border border-slate-300 rounded font-mono text-xs"
+                placeholder="&lt;html&gt;...&lt;/html&gt; 또는 <!DOCTYPE html>..."></textarea>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">포커스 키워드 (선택, --full 모드에 필요)</label>
+                <input type="text" name="focus_keyword" id="focus_keyword"
+                    class="w-full px-3 py-2 border border-slate-300 rounded text-sm"
+                    placeholder="워드프레스 SEO">
+            </div>
+            <div class="flex items-end">
+                <label class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="full" id="full" value="true" class="rounded">
+                    <span>통합 모드 (콘텐츠 + SEO)</span>
+                </label>
+            </div>
+        </div>
+        <button type="submit" id="submit-btn"
+            class="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-slate-400">
+            점수화 실행
+        </button>
+    </form>
+
+    <div id="result" class="hidden"></div>
+</div>
+
+<script>
+const form = document.getElementById('verify-form');
+const result = document.getElementById('result');
+const btn = document.getElementById('submit-btn');
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    btn.disabled = true;
+    btn.textContent = '점수화 중...';
+    result.classList.add('hidden');
+    result.innerHTML = '';
+
+    const fd = new FormData(form);
+    try {
+        const r = await fetch('/api/verify', { method: 'POST', body: fd });
+        const data = await r.json();
+        render(data);
+    } catch (err) {
+        result.innerHTML = '<div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded">' + err.message + '</div>';
+        result.classList.remove('hidden');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '점수화 실행';
+    }
+});
+
+function render(data) {
+    if (data.error) {
+        result.innerHTML = '<div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded">' + data.error + '</div>';
+        result.classList.remove('hidden');
+        return;
+    }
+    let html = '<div class="space-y-4">';
+
+    // Content
+    const c = data.content;
+    const levelColor = c.level === '우수' ? 'green' : (c.level === '발행 가능' ? 'yellow' : 'red');
+    html += '<div class="bg-white border border-slate-200 rounded-lg p-5">';
+    html += '<div class="flex items-center gap-3 mb-3">';
+    html += '<h2 class="font-medium">콘텐츠 품질</h2>';
+    html += '<span class="text-2xl font-bold">' + c.total_score + '</span><span class="text-slate-500">/100</span>';
+    html += '<span class="px-2 py-0.5 rounded text-xs bg-' + levelColor + '-100 text-' + levelColor + '-700">' + c.level + '</span>';
+    html += '</div>';
+    for (const [cat, score] of Object.entries(c.category_scores)) {
+        const pct = (score / 40) * 100;
+        html += '<div class="mb-2"><div class="flex justify-between text-xs"><span class="text-slate-600">' + cat + '</span><span class="font-mono">' + score + '</span></div>';
+        html += '<div class="h-2 bg-slate-100 rounded"><div class="h-2 bg-blue-500 rounded" style="width:' + pct + '%"></div></div></div>';
+    }
+    html += '</div>';
+
+    // SEO
+    if (data.seo) {
+        const s = data.seo;
+        html += '<div class="bg-white border border-slate-200 rounded-lg p-5">';
+        html += '<div class="flex items-center gap-3 mb-3">';
+        html += '<h2 class="font-medium">SEO 분석 (Rank Math 스타일)</h2>';
+        html += '<span class="text-2xl font-bold">' + s.total_score + '</span><span class="text-slate-500">/100</span>';
+        html += '<span class="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700">' + s.rating_label + '</span>';
+        html += '</div>';
+        html += '<div class="overflow-x-auto"><table class="w-full text-xs">';
+        html += '<thead><tr class="text-left text-slate-500 border-b"><th class="py-1">항목</th><th>결과</th><th>점수</th></tr></thead><tbody>';
+        for (const item of s.items) {
+            const ok = item.passed ? '✓' : '✗';
+            const color = item.passed ? 'text-green-600' : 'text-red-500';
+            html += '<tr class="border-b last:border-0"><td class="py-1 font-mono text-slate-600">' + item.name + '</td><td class="' + color + ' font-bold">' + ok + '</td><td class="font-mono">' + item.points_earned + '/' + item.points_max + '</td></tr>';
+        }
+        html += '</tbody></table></div></div>';
+    }
+
+    // Recommendations
+    const recs = data.overall_recommendations || c.recommendations || [];
+    if (recs.length) {
+        html += '<div class="bg-white border border-slate-200 rounded-lg p-5">';
+        html += '<h2 class="font-medium mb-3">개선 권고사항</h2>';
+        html += '<ol class="list-decimal list-inside space-y-1 text-sm">';
+        for (const r of recs) html += '<li>' + r + '</li>';
+        html += '</ol></div>';
+    }
+
+    html += '</div>';
+    result.innerHTML = html;
+    result.classList.remove('hidden');
+}
+</script>
+{% endblock %}

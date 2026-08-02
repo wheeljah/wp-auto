@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}대시보드{% endblock %}
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold">대시보드</h1>
+        <p class="text-sm text-slate-600 mt-1">워드프레스 블로그 자동화 도구 (1인 self-use)</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href="/verify" class="block p-5 bg-white border border-slate-200 rounded-lg hover:border-blue-400 hover:shadow transition">
+            <div class="text-2xl mb-2">📊</div>
+            <div class="font-medium">콘텐츠 점수화</div>
+            <div class="text-xs text-slate-500 mt-1">HTML + 키워드 → 100점 만점</div>
+        </a>
+        <a href="/generate" class="block p-5 bg-white border border-slate-200 rounded-lg hover:border-blue-400 hover:shadow transition">
+            <div class="text-2xl mb-2">✨</div>
+            <div class="font-medium">AI 초안 생성</div>
+            <div class="text-xs text-slate-500 mt-1">Ollama 로컬 LLM</div>
+        </a>
+        <a href="/publish" class="block p-5 bg-white border border-slate-200 rounded-lg hover:border-blue-400 hover:shadow transition">
+            <div class="text-2xl mb-2">📤</div>
+            <div class="font-medium">WP 발행</div>
+            <div class="text-xs text-slate-500 mt-1">점수화 게이트 + Mock/Real</div>
+        </a>
+        <a href="/optimize" class="block p-5 bg-white border border-slate-200 rounded-lg hover:border-blue-400 hover:shadow transition">
+            <div class="text-2xl mb-2">🖼️</div>
+            <div class="font-medium">이미지 최적화</div>
+            <div class="text-xs text-slate-500 mt-1">Pillow WebP/AVIF</div>
+        </a>
+        <a href="/measure" class="block p-5 bg-white border border-slate-200 rounded-lg hover:border-blue-400 hover:shadow transition">
+            <div class="text-2xl mb-2">⚡</div>
+            <div class="font-medium">CWV 측정</div>
+            <div class="text-xs text-slate-500 mt-1">Playwright + web-vitals</div>
+        </a>
+        <a href="/settings" class="block p-5 bg-white border border-slate-200 rounded-lg hover:border-blue-400 hover:shadow transition">
+            <div class="text-2xl mb-2">⚙️</div>
+            <div class="font-medium">설정</div>
+            <div class="text-xs text-slate-500 mt-1">환경변수 확인</div>
+        </a>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-lg p-5">
+        <h2 class="font-medium mb-3">최근 발행 (Mock DB)</h2>
+        {% if posts %}
+        <table class="w-full text-sm">
+            <thead class="text-left text-slate-500 border-b">
+                <tr><th class="py-2">ID</th><th>제목</th><th>상태</th><th>생성일</th></tr>
+            </thead>
+            <tbody>
+                {% for p in posts %}
+                <tr class="border-b last:border-0">
+                    <td class="py-2 font-mono text-slate-600">{{ p.id }}</td>
+                    <td class="font-medium">{{ p.title }}</td>
+                    <td><span class="px-2 py-0.5 rounded text-xs {% if p.status == 'publish' %}bg-green-100 text-green-700{% elif p.status == 'draft' %}bg-yellow-100 text-yellow-700{% else %}bg-slate-100 text-slate-600{% endif %}">{{ p.status }}</span></td>
+                    <td class="text-slate-500 text-xs">{{ p.created_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-sm text-slate-500">아직 발행된 글이 없습니다. <a href="/publish" class="text-blue-600 underline">발행하러 가기</a></p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

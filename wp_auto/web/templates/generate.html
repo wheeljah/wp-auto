@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}AI 생성{% endblock %}
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold">AI 초안 생성</h1>
+        <p class="text-sm text-slate-600 mt-1">Ollama 로컬 LLM (llama3.1:8b) — 무료, 온디바이스</p>
+    </div>
+
+    <form id="gen-form" class="bg-white border border-slate-200 rounded-lg p-5 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">주제 *</label>
+                <input type="text" name="topic" id="topic" required
+                    class="w-full px-3 py-2 border border-slate-300 rounded text-sm"
+                    placeholder="워드프레스 SEO 7가지 핵심 전략">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">메인 키워드 *</label>
+                <input type="text" name="keyword" id="keyword" required
+                    class="w-full px-3 py-2 border border-slate-300 rounded text-sm"
+                    placeholder="워드프레스 SEO">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">검색 의도</label>
+                <select name="intent" id="intent" class="w-full px-3 py-2 border border-slate-300 rounded text-sm">
+                    <option value="informational">informational (정보성)</option>
+                    <option value="commercial">commercial (상업 조사)</option>
+                    <option value="transactional">transactional (거래)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">분량 (자)</label>
+                <input type="number" name="length" id="length" value="3000" min="1000" max="10000" step="500"
+                    class="w-full px-3 py-2 border border-slate-300 rounded text-sm">
+            </div>
+        </div>
+        <button type="submit" id="submit-btn"
+            class="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-slate-400">
+            AI 초안 생성 (1~3분 소요)
+        </button>
+    </form>
+
+    <div id="result" class="hidden"></div>
+</div>
+
+<script>
+const form = document.getElementById('gen-form');
+const result = document.getElementById('result');
+const btn = document.getElementById('submit-btn');
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    btn.disabled = true;
+    btn.innerHTML = '<span class="inline-block animate-spin">⏳</span> 생성 중... (1~3분)';
+    result.classList.add('hidden');
+    result.innerHTML = '';
+
+    const fd = new FormData(form);
+    try {
+        const r = await fetch('/api/generate', { method: 'POST', body: fd });
+        const data = await r.json();
+        render(data);
+    } catch (err) {
+        result.innerHTML = '<div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded">' + err.message + '</div>';
+        result.classList.remove('hidden');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'AI 초안 생성 (1~3분 소요)';
+    }
+});
+
+function render(data) {
+    if (data.error) {
+        result.innerHTML = '<div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded">' + data.error + '</div>';
+        result.classList.remove('hidden');
+        return;
+    }
+    let html = '<div class="bg-white border border-slate-200 rounded-lg p-5">';
+    html += '<h2 class="font-medium mb-2">' + data.title + '</h2>';
+    html += '<p class="text-xs text-slate-500 mb-3">slug: ' + data.slug + ' · iterations: ' + data.iterations + '</p>';
+    html += '<details class="mb-3"><summary class="cursor-pointer text-sm text-blue-600">HTML 미리보기</summary>';
+    html += '<pre class="mt-2 p-3 bg-slate-50 rounded text-xs overflow-x-auto max-h-96">' + escapeHtml(data.html) + '</pre></details>';
+    html += '<details><summary class="cursor-pointer text-sm text-blue-600">렌더링 미리보기</summary>';
+    html += '<article class="prose mt-2 p-4 bg-slate-50 rounded max-h-96 overflow-y-auto">' + data.html + '</article></details>';
+    html += '<div class="mt-4 flex gap-2">';
+    html += '<a href="/publish" class="px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700">→ 발행하러 가기</a>';
+    html += '<button onclick="navigator.clipboard.writeText(document.getElementById(\'raw-html\').textContent)" class="px-4 py-2 bg-slate-200 text-slate-700 rounded text-sm hover:bg-slate-300">HTML 복사</button>';
+    html += '</div>';
+    html += '<pre id="raw-html" class="hidden">' + escapeHtml(data.html) + '</pre>';
+    html += '</div>';
+    result.innerHTML = html;
+    result.classList.remove('hidden');
+}
+
+function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+</script>
+{% endblock %}
