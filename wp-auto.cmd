@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 REM ============================================================
 REM wp-auto launcher (Windows)
 REM ============================================================
@@ -40,7 +40,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM 인자 없으면 기본 명령 = 'ui' (Web UI 자동 시작, 1인 self-use 메인 진입점)
+REM 인자 없으면 기본 명령 = 'ui' (1인 self-use 메인 진입점)
 if "%1"=="" (
     python -m wp_auto ui
 ) else (
