@@ -2,7 +2,25 @@
 name = "wp-auto"
 version = "0.1.0"
 description = "Free WordPress blog automation toolkit (tool-first build)"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "wheeljah", email = "wheeljah@gmail.com" },
+]
 requires-python = ">=3.11"
+keywords = ["wordpress", "seo", "automation", "blog", "cli"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP :: Site Management",
+    "Topic :: Text Processing :: Markup :: HTML",
+]
 dependencies = [
     "click>=8.1.7",
     "loguru>=0.7.2",
@@ -11,6 +29,12 @@ dependencies = [
     "beautifulsoup4>=4.12.3",
     "lxml>=5.1.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/wheeljah/wp-auto"
+Repository = "https://github.com/wheeljah/wp-auto"
+Issues = "https://github.com/wheeljah/wp-auto/issues"
+Changelog = "https://github.com/wheeljah/wp-auto/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
@@ -37,6 +61,7 @@ packages = ["wp_auto"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+src = ["wp_auto", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]

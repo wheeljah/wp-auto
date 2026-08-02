@@ -18,19 +18,15 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import List
 
 from bs4 import BeautifulSoup
-
 from loguru import logger
-
 
 # Power/Sentiment words that indicate "click-worthy" title
 _POWER_WORDS = {
     "best", "ultimate", "guide", "tutorial", "complete", "definitive",
     "essential", "top", "easy", "quick", "fast", "free", "proven",
-    "exclusive", "amazing", "incredible", "powerful", "ultimate",
-    "최고", "완벽", "가이드", "튜토리얼", "추천", "비교", "리뷰", "방법",
+    "exclusive", "amazing", "incredible", "powerful", "최고", "완벽", "가이드", "튜토리얼", "추천", "비교", "리뷰", "방법",
 }
 
 # Common stopwords (skip from density calc)
@@ -59,13 +55,13 @@ class SEOResult:
     total_score: float
     category_scores: dict[str, float]
     category_maxima: dict[str, float]
-    items: List[SEOCheckItem] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
+    items: list[SEOCheckItem] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
 
     def passed(self) -> bool:
         return self.total_score >= 70
 
-    def items_by_category(self, category: str) -> List[SEOCheckItem]:
+    def items_by_category(self, category: str) -> list[SEOCheckItem]:
         return [i for i in self.items if i.name.startswith(category + ".")]
 
 
@@ -105,7 +101,7 @@ class RankMathStyleAnalyzer:
         if not focus_keyword:
             return SEOResult(
                 total_score=0,
-                category_scores={k: 0 for k in self.CATEGORY_MAX},
+                category_scores=dict.fromkeys(self.CATEGORY_MAX, 0),
                 category_maxima=self.CATEGORY_MAX,
                 items=[],
                 recommendations=["focus_keyword가 필요합니다."],
@@ -128,7 +124,7 @@ class RankMathStyleAnalyzer:
         items.extend(self._check_content_readability(soup, recommendations))
 
         # 카테고리별 점수 집계
-        category_scores: dict[str, float] = {k: 0.0 for k in self.CATEGORY_MAX}
+        category_scores: dict[str, float] = dict.fromkeys(self.CATEGORY_MAX, 0.0)
         for item in items:
             cat = item.name.split(".")[0]
             if cat in category_scores:

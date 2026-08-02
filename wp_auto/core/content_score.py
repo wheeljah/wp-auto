@@ -20,7 +20,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional
 
 from loguru import logger
 
@@ -70,8 +69,8 @@ class VerificationResult:
     total_score: float
     category_scores: dict[str, float]
     level: ContentQualityLevel
-    feedback: List[str] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
+    feedback: list[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
 
     @property
     def passed(self) -> bool:
@@ -101,7 +100,7 @@ class SpecializedContentOptimizer:
         logger.debug("SpecializedContentOptimizer initialized with weights={}", self.weights)
 
     def verify_html(
-        self, html: str, focus_keyword: Optional[str] = None
+        self, html: str, focus_keyword: str | None = None
     ) -> VerificationResult:
         """HTML 문자열 → ContentMetrics 자동 채움 → verify.
 
@@ -135,8 +134,8 @@ class SpecializedContentOptimizer:
         각 카테고리별 점수 + 총점 + 레벨 + 피드백 + 권고를 반환.
         """
         scores: dict[str, float] = {}
-        feedback: List[str] = []
-        recommendations: List[str] = []
+        feedback: list[str] = []
+        recommendations: list[str] = []
 
         # === 1. Content Depth & Helpfulness (40점) ===
         depth_score = 0

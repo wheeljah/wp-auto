@@ -12,12 +12,12 @@ import click
 from loguru import logger
 
 from wp_auto import __version__
+from wp_auto.cli.verify import verify
 from wp_auto.core.content_score import (
     ContentMetrics,
     ContentQualityLevel,
     SpecializedContentOptimizer,
 )
-from wp_auto.cli.verify import verify
 
 
 def _configure_logger(verbose: bool) -> None:

@@ -12,7 +12,6 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Optional
 
 import click
 
@@ -52,9 +51,9 @@ from wp_auto.core.seo_analyzer import RankMathStyleAnalyzer
 )
 def verify(
     html_file: Path,
-    focus_keyword: Optional[str],
+    focus_keyword: str | None,
     as_json: bool,
-    save_report: Optional[Path],
+    save_report: Path | None,
     full: bool,
 ) -> None:
     """HTML 파일을 점수화합니다.
@@ -75,9 +74,9 @@ def verify(
 def _run_content_only(
     html: str,
     html_file: Path,
-    focus_keyword: Optional[str],
+    focus_keyword: str | None,
     as_json: bool,
-    save_report: Optional[Path],
+    save_report: Path | None,
 ) -> None:
     """콘텐츠 점수화만 실행."""
     optimizer = SpecializedContentOptimizer()
@@ -116,9 +115,9 @@ def _run_content_only(
 def _run_full_report(
     html: str,
     html_file: Path,
-    focus_keyword: Optional[str],
+    focus_keyword: str | None,
     as_json: bool,
-    save_report: Optional[Path],
+    save_report: Path | None,
 ) -> None:
     """콘텐츠 + SEO 통합 점수 카드 (D6/D7)."""
     if not focus_keyword:
@@ -188,7 +187,7 @@ def _print_integrated_card(
 ) -> None:
     """사람이 읽기 좋은 통합 점수 카드."""
     click.echo("=" * 60)
-    click.echo(f"  WP-AUTO 통합 점수 카드 (--full)")
+    click.echo("  WP-AUTO 통합 점수 카드 (--full)")
     click.echo("=" * 60)
     click.echo(f"  파일: {html_file}")
     click.echo(f"  포커스 키워드: {focus_keyword}")

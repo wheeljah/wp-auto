@@ -13,13 +13,14 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from wp_auto.core.content_score import (
     ContentQualityLevel,
     SpecializedContentOptimizer,
 )
 from wp_auto.core.html_parser import (
-    parse_html_to_metrics,
+    _count_internal_external_links,
+    _get_meta_description_length,
+    _get_title,
     _has_author_bio,
     _has_data_or_case,
     _has_faq,
@@ -28,12 +29,8 @@ from wp_auto.core.html_parser import (
     _has_table,
     _has_update_date,
     _is_mobile_friendly,
-    _get_meta_description_length,
-    _get_title,
-    _count_internal_external_links,
-    _check_images,
+    parse_html_to_metrics,
 )
-
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 

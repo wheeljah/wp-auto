@@ -29,13 +29,10 @@ D3에서 SEO 분석기와 통합, W3에서 CWV 측정기와 통합.
 from __future__ import annotations
 
 import re
-from typing import Optional
-from urllib.parse import urlparse
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 
 from wp_auto.core.content_score import ContentMetrics
-
 
 # 한국어/영어 1인칭 + 직접 경험 패턴
 _EXPERIENCE_PATTERNS = [
@@ -310,7 +307,7 @@ def _is_mobile_friendly(soup: BeautifulSoup) -> bool:
 
 def parse_html_to_metrics(
     html: str,
-    focus_keyword: Optional[str] = None,
+    focus_keyword: str | None = None,
 ) -> ContentMetrics:
     """HTML 문자열 → ContentMetrics 자동 채움.
 
