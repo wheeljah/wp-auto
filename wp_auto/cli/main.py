@@ -17,6 +17,7 @@ from wp_auto.core.content_score import (
     ContentQualityLevel,
     SpecializedContentOptimizer,
 )
+from wp_auto.cli.verify import verify
 
 
 def _configure_logger(verbose: bool) -> None:
@@ -116,6 +117,10 @@ def doctor() -> None:
 
     click.echo("")
     click.echo("환경 진단 완료.")
+
+
+# D2에서 추가: verify 서브커맨드 등록
+cli.add_command(verify, name="verify")
 
 
 if __name__ == "__main__":

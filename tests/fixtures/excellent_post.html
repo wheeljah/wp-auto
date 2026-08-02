@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>2026년 워드프레스 SEO 최적화 완벽 가이드</title>
+  <meta name="description" content="2026년 워드프레스 SEO와 Core Web Vitals를 한 번에 최적화하는 방법. 점수화 시스템부터 무료 도구까지 3000자로 정리했습니다.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preload" as="image" href="/hero.webp" fetchpriority="high">
+  <link rel="stylesheet" href="https://cdn.example.com/style.css">
+  <link rel="stylesheet" href="https://fonts.example.com/noto.css">
+  <link rel="stylesheet" href="https://ads.example.com/banner.css">
+  <link rel="stylesheet" href="https://widget.example.com/widget.css">
+  <script src="https://analytics.example.com/track.js"></script>
+  <script src="https://ads.example.com/ads.js"></script>
+</head>
+<body>
+  <article>
+    <h1>2026년 워드프레스 SEO 최적화 완벽 가이드</h1>
+    <p class="byline">작성자: 김블로거 (10년 경력) | 최종 수정: 2026-08-02</p>
+
+    <p>저는 2018년부터 워드프레스 블로그를 운영해왔습니다. 직접 7개 사이트를 운영하면서 SEO와 Core Web Vitals를 최적화한 경험을 바탕으로, 2026년 기준 가장 효과적인 방법론을 정리했습니다. 통계에 따르면 페이지 속도 1초 개선 시 전환율이 7% 증가합니다.</p>
+
+    <h2>1. SEO 점수화 시스템의 이해</h2>
+    <p>구글의 E-E-A-T 가이드라인은 2024년 Helpful Content 업데이트 이후 더 중요해졌습니다. 실제 데이터를 보면 점수 80+ 글이 75 미만 글보다 평균 CTR이 2.3배 높습니다.</p>
+
+    <h3>왜 Rank Math인가</h3>
+    <p>Rank Math는 무료 플러그인 중 가장 강력한 SEO 점수화 기능을 제공합니다. 100점 만점에 80점 이상이면 발행 가능, 90점 이상이면 우수로 판정합니다.</p>
+
+    <h2>2. 단계별 SEO 최적화</h2>
+    <ol>
+      <li>1단계: 키워드 조사 — Google Keyword Planner 활용</li>
+      <li>2단계: 제목 작성 — 메인 키워드 포함 (60자 이내)</li>
+      <li>3단계: H2/H3 계층 — 4개 이상 H2 + 각 H2마다 2-3개 H3</li>
+      <li>4단계: 메타 설명 — 140~165자, 키워드 1회 포함</li>
+      <li>5단계: 발행 후 CWV 측정 — PageSpeed Insights API</li>
+    </ol>
+
+    <h2>3. Core Web Vitals 최적화</h2>
+    <p>LCP를 2.5초 이하로 만들기 위해 다음 3가지를 적용합니다. <em>실험 결과</em> 평균 1.8초 단축 효과가 있었습니다.</p>
+
+    <h3>LCP 개선</h3>
+    <p>히어로 이미지에 fetchpriority="high" + preload를 적용하면 가장 효과적입니다. 연구에 따르면 LCP 200~800ms 개선 효과가 있습니다.</p>
+
+    <h3>INP 개선</h3>
+    <p>Long Task를 scheduler.yield()로 분할하면 메인 스레드 양보로 INP가 평균 150ms 단축됩니다.</p>
+
+    <h2>4. 비교: 무료 vs 유료 도구</h2>
+    <table>
+      <thead>
+        <tr><th>도구</th><th>가격</th><th>강점</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Rank Math</td><td>무료</td><td>점수화 + 스키마</td></tr>
+        <tr><td>Yoast SEO</td><td>$99/년</td><td>가독성 분석</td></tr>
+        <tr><td>WP Rocket</td><td>$69/년</td><td>캐싱</td></tr>
+      </tbody>
+    </table>
+
+    <h2>5. 자주 묻는 질문 (FAQ)</h2>
+    <details>
+      <summary>Q. 무료로도 충분한가요?</summary>
+      <p>A. 네, LiteSpeed Cache + Cloudflare 무료 + Rank Math 무료면 대부분의 블로그에서 충분합니다.</p>
+    </details>
+    <details>
+      <summary>Q. 점수 75 미만이어도 발행할 수 있나요?</summary>
+      <p>A. 가능합니다만, 검색 노출이 늦어질 수 있습니다. 발행 전 보완을 권장합니다.</p>
+    </details>
+    <details>
+      <summary>Q. CWV 측정은 얼마나 자주 하나요?</summary>
+      <p>A. 신규 페이지 발행 후 24시간 + 주 1회 일괄 측정 + 알고리즘 업데이트 시 재측정</p>
+    </details>
+
+    <h2>6. 결론</h2>
+    <blockquote>
+      "AI 80% + 사람 20% 하이브리드 방식이 가장 안전합니다." — 이 가이드의 핵심 결론
+    </blockquote>
+    <p>저는 이 방식으로 매주 3개씩 발행하면서 검색 트래픽을 3배로 키웠습니다. 직접 해본 결과, 가장 중요한 것은 점수화 시스템의 일관된 적용이었습니다.</p>
+
+    <h2>7. 참고 자료</h2>
+    <ul>
+      <li><a href="https://developers.google.com/search/docs">Google Search Central</a></li>
+      <li><a href="https://web.dev/vitals/">web.dev Core Web Vitals</a></li>
+      <li><a href="https://rankmath.com/kb/">Rank Math 공식 문서</a></li>
+      <li><a href="https://httparchive.org/">HTTP Archive 리서치 데이터</a></li>
+    </ul>
+
+    <footer>
+      <p>작성자: 김블로거 — 2018년부터 워드프레스 블로그 운영. SEO 컨설팅 50+ 사이트.</p>
+      <p>Updated: 2026-08-02</p>
+    </footer>
+  </article>
+</body>
+</html>

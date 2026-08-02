@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from loguru import logger
 
@@ -99,6 +99,35 @@ class SpecializedContentOptimizer:
             "speed": 15,
         }
         logger.debug("SpecializedContentOptimizer initialized with weights={}", self.weights)
+
+    def verify_html(
+        self, html: str, focus_keyword: Optional[str] = None
+    ) -> VerificationResult:
+        """HTML 문자열 → ContentMetrics 자동 채움 → verify.
+
+        Args:
+            html: HTML 문자열 (파일 읽기 또는 fetch 결과)
+            focus_keyword: 메인 키워드 (선택). main_keyword_in_title 자동 체크.
+
+        Returns:
+            VerificationResult
+
+        Note:
+            D2 범위: 휴리스틱 기반 자동 채움. 100% 정확하지 않음.
+            정밀 분석이 필요하면 ContentMetrics를 직접 만들어 verify() 호출.
+        """
+        # 순환 import 회피: lazy import
+        from wp_auto.core.html_parser import parse_html_to_metrics
+
+        metrics = parse_html_to_metrics(html, focus_keyword=focus_keyword)
+        logger.debug(
+            "verify_html: title='{}' word_count={} h2={} focus_keyword={}",
+            metrics.title[:40],
+            metrics.word_count,
+            metrics.h2_count,
+            focus_keyword,
+        )
+        return self.verify(metrics)
 
     def verify(self, metrics: ContentMetrics) -> VerificationResult:
         """ContentMetrics → VerificationResult.
