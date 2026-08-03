@@ -1,0 +1,54 @@
+{
+  "scenario": "F_deep_dive_ko",
+  "language": "ko",
+  "style": "deep_dive",
+  "target_chunks": 4,
+  "rss_topic": "'3백억 원대 사기 의혹' 차가원 대표 구속영장실질심사 출석",
+  "rss_source": "MBC 뉴스",
+  "outline_title": "차가원 대표 사기 의혹, 구속영장 실질심사에서의 출석",
+  "n_chunks": 4,
+  "chunk_titles": [
+    "배경과 맥락",
+    "핵심 방법 / 전략",
+    "실제 사례 / 예시",
+    "주의사항 / 함정"
+  ],
+  "pillar_title": "차가원 대표 사기 의혹, 구속영장 실질심사에서의 출석 (개요)",
+  "timing_sec": {
+    "outline": 488.5,
+    "cluster_generation": 437.6,
+    "total": 488.5
+  },
+  "engagement": {
+    "pillar_has_hook": true,
+    "n_chunks_with_cta": 4,
+    "total_ctas": 5
+  },
+  "single_mode": {
+    "html_chars": 7187,
+    "internal_links": 16,
+    "wp_id": 35
+  },
+  "cluster_mode": {
+    "n_posts": 5,
+    "total_html_chars": 6509,
+    "avg_internal_links": 3.2,
+    "wp_ids": [
+      36,
+      37,
+      38,
+      39,
+      40
+    ]
+  },
+  "html_files": {
+    "single": "F_single.html",
+    "cluster": [
+      "F_cluster_1.html",
+      "F_cluster_2.html",
+      "F_cluster_3.html",
+      "F_cluster_4.html",
+      "F_cluster_5.html"
+    ]
+  }
+}

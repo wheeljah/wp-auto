@@ -23,7 +23,7 @@ PROMPTS_DIR = None  # 기본값 사용
 # ---------------------------------------------------------------------------
 
 def make_mock_client(*, lang: str = "ko") -> MockOllamaClient:
-    """plan / body / pillar prompt 각각의 unique 키워드로 매칭되는 mock."""
+    """plan / body / pillar / hook / cta prompt 각각의 unique 키워드로 매칭되는 mock."""
     if lang == "ko":
         return MockOllamaClient({
             # chunk_plan prompt에는 "subtopics"라는 단어가 JSON 예시에 있음
@@ -35,14 +35,31 @@ def make_mock_client(*, lang: str = "ko") -> MockOllamaClient:
                 '{"id": "summary", "title": "정리", "summary": "마무리", "focus_keyword": "정리"}'
                 ']}'
             ),
-            # chunk_body prompt에는 "Hook intro"라는 고유 단어
-            "Hook intro": "<p>Mock chunk body in Korean. hook + 핵심 + 실전 적용.</p>",
+            # chunk_body prompt에는 "단락 chunk"라는 고유 단어
+            "단락 chunk": "<p>Mock chunk body in Korean. hook + 핵심 + 실전 적용.</p>",
             # pillar prompt에는 "Table of Contents"라는 고유 단어
             "Table of Contents": (
                 "<p>Mock pillar intro.</p>"
                 "<h2>목차 (Table of Contents)</h2>"
                 "<ol><li><a href='#background'>1. 배경</a></li></ol>"
                 "<p>결론 + CTA.</p>"
+            ),
+            # hooks.txt prompt에는 "__HOOKS_MARKER__"가 mock 매칭용으로 들어감
+            "__HOOKS_MARKER__": (
+                '{"hooks": ['
+                '{"type": "question", "text": "왜 X는 Y일까?", "rationale": "호기심"},'
+                '{"type": "stat", "text": "X%의 사용자가 Y를 모른다.", "rationale": "구체적 수치"},'
+                '{"type": "story", "text": "어느 날 A는 B를 발견했다.", "rationale": "스토리텔링"},'
+                '{"type": "reversal", "text": "X라고 알려진 Y의 진실은 Z다.", "rationale": "상식 뒤집기"}'
+                ']}'
+            ),
+            # cta.txt prompt에는 "__CTA_MARKER__"가 mock 매칭용으로 들어감
+            "__CTA_MARKER__": (
+                '{"ctas": ['
+                '{"type": "informational", "text": "더 알아보기", "placement_hint": "본문 끝"},'
+                '{"type": "action", "text": "지금 시작하기", "placement_hint": "CTA 버튼"},'
+                '{"type": "social_proof", "text": "커뮤니티 참여", "placement_hint": "푸터"}'
+                ']}'
             ),
         })
     else:
@@ -53,8 +70,23 @@ def make_mock_client(*, lang: str = "ko") -> MockOllamaClient:
                 '{"id": "method", "title": "Method", "summary": "how", "focus_keyword": "y"}'
                 ']}'
             ),
-            "Hook intro": "<p>Mock English chunk body.</p>",
+            "paragraph chunk": "<p>Mock English chunk body.</p>",
             "Table of Contents": "<p>Mock pillar.</p><h2>Table of Contents</h2><p>...</p>",
+            "__HOOKS_MARKER__": (
+                '{"hooks": ['
+                '{"type": "question", "text": "Why X?", "rationale": "curiosity"},'
+                '{"type": "stat", "text": "X% don\'t know Y.", "rationale": "specific"},'
+                '{"type": "story", "text": "Once upon a time.", "rationale": "story"},'
+                '{"type": "reversal", "text": "Truth is Z.", "rationale": "flip"}'
+                ']}'
+            ),
+            "__CTA_MARKER__": (
+                '{"ctas": ['
+                '{"type": "informational", "text": "Learn more.", "placement_hint": "end"},'
+                '{"type": "action", "text": "Get started.", "placement_hint": "button"},'
+                '{"type": "social_proof", "text": "Join community.", "placement_hint": "footer"}'
+                ']}'
+            ),
         })
 
 
@@ -230,6 +262,85 @@ def test_target_chunks_default_is_5(mock_client: MockOllamaClient) -> None:
     """DEFAULT_TARGET_CHUNKS = 5."""
     gen = ChunkedContentGenerator(mock_client)
     assert gen.target_chunks == 5
+
+
+# ---------------------------------------------------------------------------
+# Style (standard / trend / deep_dive) + hook/CTA 통합
+# ---------------------------------------------------------------------------
+
+def test_style_standard_no_hook_no_cta(
+    mock_client: MockOllamaClient, sample_outline: Outline
+) -> None:
+    """style=standard → hook/CTA 미주입 (기존 동작 보존)."""
+    gen = ChunkedContentGenerator(mock_client, style="standard")
+    cluster = gen.generate_pillar_cluster(sample_outline, language="ko")
+    # pillar body에 hook/CTA div 없음
+    assert "wp-auto-hook" not in cluster.pillar.body_html
+    assert "wp-auto-cta" not in cluster.pillar.body_html
+    # chunk body에도 CTA 없음
+    for ch in cluster.chunks:
+        assert "wp-auto-cta" not in ch.body_html
+
+
+def test_style_trend_injects_hook_and_cta(
+    mock_client: MockOllamaClient, sample_outline: Outline
+) -> None:
+    """style=trend → pillar에 hook, chunks에 CTA."""
+    gen = ChunkedContentGenerator(mock_client, style="trend")
+    cluster = gen.generate_pillar_cluster(sample_outline, language="ko")
+    # pillar에 hook
+    assert "wp-auto-hook" in cluster.pillar.body_html
+    # chunk들 중 최소 1개에 CTA
+    cta_count = sum(1 for ch in cluster.chunks if "wp-auto-cta" in ch.body_html)
+    assert cta_count >= 1
+
+
+def test_style_deep_dive_injects_hook_and_cta(
+    mock_client: MockOllamaClient, sample_outline: Outline
+) -> None:
+    """style=deep_dive도 hook/CTA 주입."""
+    gen = ChunkedContentGenerator(mock_client, style="deep_dive")
+    cluster = gen.generate_pillar_cluster(sample_outline, language="ko")
+    assert "wp-auto-hook" in cluster.pillar.body_html
+    cta_count = sum(1 for ch in cluster.chunks if "wp-auto-cta" in ch.body_html)
+    assert cta_count >= 1
+
+
+def test_invalid_style_raises(mock_client: MockOllamaClient) -> None:
+    """잘못된 style → ValueError."""
+    with pytest.raises(ValueError, match="Invalid style"):
+        ChunkedContentGenerator(mock_client, style="invalid")
+
+
+def test_style_instruction_appended_to_body_prompt(
+    mock_client: MockOllamaClient, sample_outline: Outline
+) -> None:
+    """style instruction이 chunk body prompt 끝에 append (plan은 generic)."""
+    mock_client.generate = MagicMock(wraps=mock_client.generate)  # type: ignore[method-assign]
+    gen = ChunkedContentGenerator(mock_client, style="trend")
+    # plan 후 chunks까지 생성하여 body prompt 캡처
+    cluster = gen.generate_pillar_cluster(sample_outline, language="ko", target_chunks=2)
+    # 모든 generate 호출 중 "단락 chunk" 매칭(=body prompt)을 찾기
+    body_prompts = [
+        c.args[0] for c in mock_client.generate.call_args_list
+        if "단락 chunk" in c.args[0]
+    ]
+    assert len(body_prompts) >= 1
+    # 첫 body prompt에 style instruction (트렌드)가 들어가 있어야
+    assert "트렌드" in body_prompts[0] or "Why Now" in body_prompts[0]
+
+
+def test_pillar_cluster_category_includes_style(
+    mock_client: MockOllamaClient, sample_outline: Outline
+) -> None:
+    """PillarCluster.category에 style 포함 (필터링 가능)."""
+    gen_trend = ChunkedContentGenerator(mock_client, style="trend")
+    cluster = gen_trend.generate_pillar_cluster(sample_outline, language="ko")
+    assert "trend" in cluster.category
+
+    gen_deep = ChunkedContentGenerator(mock_client, style="deep_dive")
+    cluster2 = gen_deep.generate_pillar_cluster(sample_outline, language="ko")
+    assert "deep_dive" in cluster2.category
 
 
 def test_stitch_single_contains_all_chunks(

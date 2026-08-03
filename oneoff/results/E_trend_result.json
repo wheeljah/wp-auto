@@ -1,0 +1,54 @@
+{
+  "scenario": "E_trend_report_ko",
+  "language": "ko",
+  "style": "trend",
+  "target_chunks": 4,
+  "rss_topic": "오늘 광주·대구·부산 39도, 서울 37도…무서운 숫자의 극한 더위",
+  "rss_source": "한겨레",
+  "outline_title": "39도의 폭염…올 여름 최고 온도 동네별 막강 정보",
+  "n_chunks": 4,
+  "chunk_titles": [
+    "배경과 맥락",
+    "핵심 방법 / 전략",
+    "실제 사례 / 예시",
+    "주의사항 / 함정"
+  ],
+  "pillar_title": "39도의 폭염…올 여름 최고 온도 동네별 막강 정보 (개요)",
+  "timing_sec": {
+    "outline": 496.2,
+    "cluster_generation": 422.3,
+    "total": 496.2
+  },
+  "engagement": {
+    "pillar_has_hook": true,
+    "n_chunks_with_cta": 4,
+    "total_ctas": 5
+  },
+  "single_mode": {
+    "html_chars": 6338,
+    "internal_links": 16,
+    "wp_id": 29
+  },
+  "cluster_mode": {
+    "n_posts": 5,
+    "total_html_chars": 5660,
+    "avg_internal_links": 3.2,
+    "wp_ids": [
+      30,
+      31,
+      32,
+      33,
+      34
+    ]
+  },
+  "html_files": {
+    "single": "E_single.html",
+    "cluster": [
+      "E_cluster_1.html",
+      "E_cluster_2.html",
+      "E_cluster_3.html",
+      "E_cluster_4.html",
+      "E_cluster_5.html"
+    ]
+  }
+}

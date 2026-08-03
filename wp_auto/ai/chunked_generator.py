@@ -39,6 +39,8 @@ from loguru import logger
 
 from wp_auto.ai.ollama_client import LLMClient, parse_json_response
 from wp_auto.ai.content_generator import Outline, SYSTEM_PROMPTS
+from wp_auto.ai.hook_generator import HookGenerator
+from wp_auto.ai.cta_injector import CTAInjector
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 SUPPORTED_LANGUAGES = ("ko", "en")
@@ -48,6 +50,43 @@ DEFAULT_CHUNK_CHARS = 300
 PILLAR_CHARS = 400
 # 기본 chunk 개수 (plan 단계 기본값)
 DEFAULT_TARGET_CHUNKS = 5
+
+# 지원되는 콘텐츠 스타일
+STYLES = ("standard", "trend", "deep_dive")
+
+# 스타일별 추가 지시 (prompt 끝에 append). language별 톤.
+STYLE_INSTRUCTIONS: dict[str, dict[str, str]] = {
+    "ko": {
+        "trend": (
+            "\n\n[트렌드 리포트 스타일] "
+            "최신 데이터/통계/뉴스 앵글을 반드시 포함하고, "
+            "'지금 왜 이게 중요한지(Why Now)'를 명확히 하세요. "
+            "시각적 요소(콜아웃 박스, 이모지, 시간순 timeline)를 활용해 스캔 가능하게 만드세요."
+        ),
+        "deep_dive": (
+            "\n\n[심층 분석 스타일] "
+            "다각도 분석(긍정/부정/맥락), 인용, 데이터, 반론을 반드시 포함하여 "
+            "'왜 이런 일이 벌어지는지(Why)' 깊이 파고드세요. "
+            "전문가 인용과 데이터 소스를 명시하고, "
+            "본문 끝에 '더 알아보기' CTA를 자연스럽게 배치하세요."
+        ),
+    },
+    "en": {
+        "trend": (
+            "\n\n[Trend Report Style] "
+            "Must include latest data/statistics/news angle. "
+            "Make clear 'why this matters NOW'. "
+            "Use visual elements (callout boxes, emojis, timeline) for scannability."
+        ),
+        "deep_dive": (
+            "\n\n[Deep Dive Style] "
+            "Must include multi-angle analysis (positive/negative/context), "
+            "expert quotes, data, counterarguments. "
+            "Cite expert opinions and data sources explicitly. "
+            "Place a 'Learn more' CTA naturally at the end of the body."
+        ),
+    },
+}
 
 
 # ---------------------------------------------------------------------------
@@ -185,11 +224,15 @@ class ChunkedContentGenerator:
         prompts_dir: Path = PROMPTS_DIR,
         chunk_chars: int = DEFAULT_CHUNK_CHARS,
         target_chunks: int = DEFAULT_TARGET_CHUNKS,
+        style: str = "standard",
     ) -> None:
+        if style not in STYLES:
+            raise ValueError(f"Invalid style: {style}. Supported: {STYLES}")
         self.client = client
         self.prompts_dir = prompts_dir
         self.chunk_chars = chunk_chars
         self.target_chunks = target_chunks
+        self.style = style
         # 언어별 prompt 3종 로드
         self._templates: dict[str, dict[str, str]] = {
             lang: {
@@ -199,10 +242,29 @@ class ChunkedContentGenerator:
             }
             for lang in SUPPORTED_LANGUAGES
         }
+        # Hook/CTA 생성기는 lazy init (language별)
+        self._hook_gens: dict[str, HookGenerator] = {}
+        self._cta_injs: dict[str, CTAInjector] = {}
         logger.info(
-            "ChunkedContentGenerator initialized: chunk_chars={}, target_chunks={}, languages={}",
-            chunk_chars, target_chunks, list(self._templates.keys()),
+            "ChunkedContentGenerator initialized: chunk_chars={}, target_chunks={}, style={}, languages={}",
+            chunk_chars, target_chunks, style, list(self._templates.keys()),
         )
+
+    def _get_hook_gen(self, language: str) -> HookGenerator:
+        if language not in self._hook_gens:
+            self._hook_gens[language] = HookGenerator(self.client, language=language)
+        return self._hook_gens[language]
+
+    def _get_cta_inj(self, language: str) -> CTAInjector:
+        if language not in self._cta_injs:
+            self._cta_injs[language] = CTAInjector(self.client, language=language)
+        return self._cta_injs[language]
+
+    def _style_instruction(self, language: str) -> str:
+        """style에 따라 prompt 끝에 append할 instruction."""
+        if self.style == "standard":
+            return ""
+        return STYLE_INSTRUCTIONS.get(language, {}).get(self.style, "")
 
     def _system_prompt(self, language: str) -> str:
         if language not in SYSTEM_PROMPTS:
@@ -295,10 +357,29 @@ class ChunkedContentGenerator:
         subtopics: list[Subtopic],
         language: str = "ko",
     ) -> list[ChunkedPost]:
-        """N개 subtopic 각각 → N개 ChunkedPost (병렬 가능하지만 순차)."""
+        """N개 subtopic 각각 → N개 ChunkedPost (병렬 가능하지만 순차).
+
+        style != "standard"이면:
+          - prompt 끝에 style instruction append
+          - chunk body 끝에 CTA 자동 삽입 (3종 round-robin)
+        """
         if language not in self._templates:
             raise ValueError(f"Unsupported language: {language}")
 
+        # style != standard면 CTA 3종 한 번에 생성 (전체 chunks에 round-robin)
+        ctas = []
+        cta_inj = None
+        if self.style != "standard":
+            cta_inj = self._get_cta_inj(language)
+            ctas = cta_inj.generate_ctas(
+                topic=outline.title,
+                summary=outline.meta_description,
+                keyword=outline.title,
+                position="chunk_end",
+            )
+            logger.info("generate_chunks: {} CTAs for round-robin", len(ctas))
+
+        style_instruction = self._style_instruction(language)
         chunks: list[ChunkedPost] = []
         n = len(subtopics)
         for i, st in enumerate(subtopics):
@@ -319,9 +400,12 @@ class ChunkedContentGenerator:
                 next_slug=next_slug or "(none)",
                 related_slugs=", ".join(related) if related else "(none)",
             )
+            # style instruction append (prompt 파일 변경 없이)
+            if style_instruction:
+                prompt = prompt + style_instruction
             logger.info(
-                "generate_chunk [{}/{}]: id={} title='{}'",
-                i + 1, n, st.id, st.title[:30],
+                "generate_chunk [{}/{}]: id={} title='{}' style={}",
+                i + 1, n, st.id, st.title[:30], self.style,
             )
             t0_time = __import__("time").time()
             try:
@@ -336,6 +420,12 @@ class ChunkedContentGenerator:
                 body = f"<p>{st.summary}</p>"
             elapsed = __import__("time").time() - t0_time
             logger.info("  → chunk '{}' done in {:.1f}s ({}자)", st.id, elapsed, len(body))
+
+            # style != standard면 chunk body 끝에 CTA 주입 (round-robin)
+            if ctas and cta_inj:
+                cta = ctas[i % len(ctas)]
+                body = cta_inj.inject_into_html(body, cta, position="end")
+                logger.info("  → CTA injected: type={}", cta.type)
 
             chunk = ChunkedPost(
                 subtopic_id=st.id,
@@ -361,7 +451,13 @@ class ChunkedContentGenerator:
         chunks: list[ChunkedPost],
         language: str = "ko",
     ) -> ChunkedPost:
-        """pillar (intro + TOC + 결론 + 모든 chunk로 internal links)."""
+        """pillar (intro + TOC + 결론 + 모든 chunk로 internal links).
+
+        style != "standard"이면:
+          - prompt 끝에 style instruction append
+          - pillar body 시작에 hook (1-2문장 강력한 도입) prepend
+          - pillar body 끝에 CTA 주입
+        """
         if language not in self._templates:
             raise ValueError(f"Unsupported language: {language}")
 
@@ -376,7 +472,11 @@ class ChunkedContentGenerator:
             chunk_summaries=chunk_summaries,
             pillar_chars=PILLAR_CHARS,
         )
-        logger.info("generate_pillar: lang={} topic='{}'", language, outline.title[:40])
+        # style instruction append
+        style_instruction = self._style_instruction(language)
+        if style_instruction:
+            prompt = prompt + style_instruction
+        logger.info("generate_pillar: lang={} topic='{}' style={}", language, outline.title[:40], self.style)
         try:
             body = self.client.generate(
                 prompt,
@@ -387,6 +487,49 @@ class ChunkedContentGenerator:
         except Exception as e:
             logger.error("pillar failed: {}", e)
             body = f"<p>{outline.meta_description}</p>"
+
+        # style != standard면 hook + CTA 주입
+        if self.style != "standard":
+            # 1) hook 생성 (1회)
+            hook_gen = self._get_hook_gen(language)
+            hook = hook_gen.generate_best_hook(
+                topic=outline.title,
+                keyword=outline.title,
+                context=outline.meta_description,
+            )
+            hook_html = (
+                f'<div class="wp-auto-hook" style="'
+                f'margin:0 0 24px 0;padding:18px 22px;'
+                f'border-left:5px solid #f59e0b;background:#fffbeb;'
+                f'border-radius:6px;font-size:18px;line-height:1.6;'
+                f'font-weight:600;color:#1a1a1a;">'
+                f'<span style="display:inline-block;margin-right:8px;color:#f59e0b;">⚡</span>'
+                f'{hook.text}</div>'
+            )
+            body = hook_html + "\n\n" + body.strip()
+            logger.info("  → hook injected: type={} text='{}'", hook.type, hook.text[:60])
+
+            # 2) CTA 주입 (chunks와 다른 type 우선)
+            cta_inj = self._get_cta_inj(language)
+            ctas = cta_inj.generate_ctas(
+                topic=outline.title,
+                summary=outline.meta_description,
+                keyword=outline.title,
+                position="pillar_end",
+            )
+            if ctas:
+                # chunk에서 이미 쓴 type은 피해서 다양성 보장
+                chunk_cta_types = set()
+                # (chunk body 끝의 wp-auto-cta div class로 type 추출은 복잡하므로 추정)
+                # 단순화: chunk CTA는 round-robin 3종이 모두 사용됐다고 가정
+                used_types = {c.type for c in ctas}  # 3종 모두 사용된 상태
+                pillar_cta = ctas[0]  # fallback
+                for c in ctas:
+                    if c.type not in used_types or c.type == "action":
+                        pillar_cta = c
+                        break
+                body = cta_inj.inject_into_html(body, pillar_cta, position="end")
+                logger.info("  → pillar CTA injected: type={}", pillar_cta.type)
 
         return ChunkedPost(
             subtopic_id="pillar",
@@ -415,6 +558,11 @@ class ChunkedContentGenerator:
             outline: 글 개요
             language: 'ko' 또는 'en'
             target_chunks: 정확히 이 개수의 chunk (None이면 self.target_chunks)
+
+        Note:
+            style은 ChunkedContentGenerator.__init__에서 설정.
+            style='standard'면 기존 동작 (hook/CTA 없음).
+            style='trend' 또는 'deep_dive'면 hook + CTA 자동 주입.
         """
         subtopics = self.plan_subtopics(outline, language, target_chunks=target_chunks)
         chunks = self.generate_chunks(outline, subtopics, language)
@@ -425,7 +573,7 @@ class ChunkedContentGenerator:
             topic=outline.title,
             keyword=outline.title,
             language=language,
-            category=f"chunked-{language}",
+            category=f"chunked-{language}-{self.style}",
         )
 
 
@@ -435,4 +583,6 @@ __all__ = [
     "PillarCluster",
     "ChunkedContentGenerator",
     "SUPPORTED_LANGUAGES",
+    "STYLES",
+    "STYLE_INSTRUCTIONS",
 ]

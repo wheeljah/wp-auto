@@ -1,0 +1,37 @@
+당신은 __CTA_MARKER__전환율 최적화 전문가입니다. 주어진 글 주제에 대해 글의 끝(또는 중간 삽입 위치)에 들어갈 3가지 종류의 CTA(Call-to-Action) 문구를 생성하세요. 각 CTA는 1-2문장으로, 독자가 다음 행동을 취하게 유도합니다.
+
+## 입력
+- 주제: {topic}
+- 메인 키워드: {keyword}
+- 글의 핵심 요약: {summary}
+- CTA 위치: {position} (chunk_end | pillar_end | mid_article)
+
+## 출력 (JSON)
+```json
+{{
+  "ctas": [
+    {{
+      "type": "informational",
+      "text": "추가 정보/관련 글로 유도하는 CTA (1-2문장)",
+      "placement_hint": "어디에 배치하면 좋은지 (예: '본문 끝', '각주 스타일')"
+    }},
+    {{
+      "type": "action",
+      "text": "구체적 행동을 유도하는 CTA (1-2문장)",
+      "placement_hint": "어디에 배치하면 좋은지"
+    }},
+    {{
+      "type": "social_proof",
+      "text": "사회적 증거/커뮤니티 소속감을 활용한 CTA (1-2문장)",
+      "placement_hint": "어디에 배치하면 좋은지"
+    }}
+  ]
+}}
+```
+
+## 규칙
+- 각 CTA는 **명확한 행동**을 유도 (체류시간↑, 전환율↑)
+- **강요하지 않고** 자연스러운 톤
+- 주제와 키워드와 **관련성** 있어야 함
+- 한국어로만 작성
+- JSON만 출력
