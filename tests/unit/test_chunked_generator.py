@@ -115,6 +115,13 @@ def sample_outline() -> Outline:
 # 데이터 모델
 # ---------------------------------------------------------------------------
 
+def make_gen(client, **kwargs):
+    """v0.5+ 새 모듈 disable (link verify, structure optimize)."""
+    kwargs.setdefault('verify_links', False)
+    kwargs.setdefault('optimize_structure', False)
+    return ChunkedContentGenerator(client, **kwargs)
+
+
 def test_subtopic_dataclass() -> None:
     s = Subtopic(id="background", title="배경", summary="...")
     assert s.id == "background"
@@ -135,7 +142,7 @@ def test_chunked_post_dataclass() -> None:
 # ---------------------------------------------------------------------------
 
 def test_plan_subtopics_korean(mock_client: MockOllamaClient, sample_outline: Outline) -> None:
-    gen = ChunkedContentGenerator(mock_client)
+    gen = make_gen(mock_client)
     subs = gen.plan_subtopics(sample_outline, language="ko")
     assert len(subs) == 4
     assert subs[0].id == "background"
@@ -148,7 +155,7 @@ def test_plan_subtopics_fallback_on_invalid_json(
 ) -> None:
     """JSON parse 실패 시 outline H2 → Subtopic fallback."""
     client = MockOllamaClient({"subtopics": "not valid json"})
-    gen = ChunkedContentGenerator(client)
+    gen = make_gen(client)
     subs = gen.plan_subtopics(sample_outline, language="ko")
     assert len(subs) == len(sample_outline.outline)  # fallback: H2 1개 = 1 subtopic
     assert subs[0].id == "h2-0"
@@ -157,7 +164,7 @@ def test_plan_subtopics_fallback_on_invalid_json(
 def test_generate_chunks_count_and_navigation(
     mock_client: MockOllamaClient, sample_outline: Outline
 ) -> None:
-    gen = ChunkedContentGenerator(mock_client)
+    gen = make_gen(mock_client)
     subs = gen.plan_subtopics(sample_outline, language="ko")
     chunks = gen.generate_chunks(sample_outline, subs, language="ko")
     assert len(chunks) == len(subs)
@@ -173,7 +180,7 @@ def test_generate_chunks_count_and_navigation(
 def test_generate_pillar_with_chunks(
     mock_client: MockOllamaClient, sample_outline: Outline
 ) -> None:
-    gen = ChunkedContentGenerator(mock_client)
+    gen = make_gen(mock_client)
     subs = gen.plan_subtopics(sample_outline, language="ko")
     chunks = gen.generate_chunks(sample_outline, subs, language="ko")
     pillar = gen.generate_pillar(sample_outline, subs, chunks, language="ko")
@@ -185,7 +192,7 @@ def test_generate_pillar_with_chunks(
 def test_generate_pillar_cluster_all_in_one(
     mock_client: MockOllamaClient, sample_outline: Outline
 ) -> None:
-    gen = ChunkedContentGenerator(mock_client)
+    gen = make_gen(mock_client)
     cluster = gen.generate_pillar_cluster(sample_outline, language="ko")
     assert isinstance(cluster, PillarCluster)
     assert len(cluster.chunks) >= 2
@@ -202,7 +209,7 @@ def test_plan_subtopics_target_chunks_truncates_excess(
     mock_client: MockOllamaClient, sample_outline: Outline
 ) -> None:
     """LLM이 N+1 반환하면 target_chunks로 truncate."""
-    gen = ChunkedContentGenerator(mock_client)
+    gen = make_gen(mock_client)
     # mock client는 4개 반환. target_chunks=2로 truncate.
     subs = gen.plan_subtopics(sample_outline, language="ko", target_chunks=2)
     assert len(subs) == 2
@@ -215,7 +222,7 @@ def test_plan_subtopics_target_chunks_warns_when_fewer(
     mock_client: MockOllamaClient, sample_outline: Outline
 ) -> None:
     """LLM이 적게 반환하면 warning + 그대로."""
-    gen = ChunkedContentGenerator(mock_client)
+    gen = make_gen(mock_client)
     # mock client는 4개 반환. target_chunks=8 요청 → 4개 그대로.
     subs = gen.plan_subtopics(sample_outline, language="ko", target_chunks=8)
     assert len(subs) == 4  # 부족해도 그대로
@@ -228,7 +235,7 @@ def test_plan_subtopics_includes_target_chunks_in_prompt(
     # generate 호출을 MagicMock으로 wrap해서 인자 캡처
     mock_client.generate = MagicMock(wraps=mock_client.generate)  # type: ignore[method-assign]
 
-    gen = ChunkedContentGenerator(mock_client, target_chunks=7)
+    gen = make_gen(mock_client, target_chunks=7)
     gen.plan_subtopics(sample_outline, language="ko")
 
     # generate 호출의 첫 번째 위치 인자 = prompt
@@ -242,7 +249,7 @@ def test_plan_subtopics_overrides_constructor_target(
     mock_client: MockOllamaClient, sample_outline: Outline
 ) -> None:
     """plan_subtopics(target_chunks=...)가 생성자 값을 override."""
-    gen = ChunkedContentGenerator(mock_client, target_chunks=5)
+    gen = make_gen(mock_client, target_chunks=5)
     subs = gen.plan_subtopics(sample_outline, language="ko", target_chunks=2)
     assert len(subs) == 2  # override된 2로 truncate
 
@@ -251,7 +258,7 @@ def test_generate_pillar_cluster_with_target_chunks(
     mock_client: MockOllamaClient, sample_outline: Outline
 ) -> None:
     """generate_pillar_cluster에 target_chunks 전달."""
-    gen = ChunkedContentGenerator(mock_client)
+    gen = make_gen(mock_client)
     cluster = gen.generate_pillar_cluster(
         sample_outline, language="ko", target_chunks=3
     )
@@ -260,7 +267,7 @@ def test_generate_pillar_cluster_with_target_chunks(
 
 def test_target_chunks_default_is_5(mock_client: MockOllamaClient) -> None:
     """DEFAULT_TARGET_CHUNKS = 5."""
-    gen = ChunkedContentGenerator(mock_client)
+    gen = make_gen(mock_client)
     assert gen.target_chunks == 5
 
 
@@ -272,7 +279,7 @@ def test_style_standard_no_hook_no_cta(
     mock_client: MockOllamaClient, sample_outline: Outline
 ) -> None:
     """style=standard → hook/CTA 미주입 (기존 동작 보존)."""
-    gen = ChunkedContentGenerator(mock_client, style="standard")
+    gen = make_gen(mock_client, style="standard")
     cluster = gen.generate_pillar_cluster(sample_outline, language="ko")
     # pillar body에 hook/CTA div 없음
     assert "wp-auto-hook" not in cluster.pillar.body_html
@@ -286,7 +293,7 @@ def test_style_trend_injects_hook_and_cta(
     mock_client: MockOllamaClient, sample_outline: Outline
 ) -> None:
     """style=trend → pillar에 hook, chunks에 CTA."""
-    gen = ChunkedContentGenerator(mock_client, style="trend")
+    gen = make_gen(mock_client, style="trend")
     cluster = gen.generate_pillar_cluster(sample_outline, language="ko")
     # pillar에 hook
     assert "wp-auto-hook" in cluster.pillar.body_html
@@ -299,7 +306,7 @@ def test_style_deep_dive_injects_hook_and_cta(
     mock_client: MockOllamaClient, sample_outline: Outline
 ) -> None:
     """style=deep_dive도 hook/CTA 주입."""
-    gen = ChunkedContentGenerator(mock_client, style="deep_dive")
+    gen = make_gen(mock_client, style="deep_dive")
     cluster = gen.generate_pillar_cluster(sample_outline, language="ko")
     assert "wp-auto-hook" in cluster.pillar.body_html
     cta_count = sum(1 for ch in cluster.chunks if "wp-auto-cta" in ch.body_html)
@@ -309,7 +316,7 @@ def test_style_deep_dive_injects_hook_and_cta(
 def test_invalid_style_raises(mock_client: MockOllamaClient) -> None:
     """잘못된 style → ValueError."""
     with pytest.raises(ValueError, match="Invalid style"):
-        ChunkedContentGenerator(mock_client, style="invalid")
+        make_gen(mock_client, style="invalid")
 
 
 def test_style_instruction_appended_to_body_prompt(
@@ -317,7 +324,7 @@ def test_style_instruction_appended_to_body_prompt(
 ) -> None:
     """style instruction이 chunk body prompt 끝에 append (plan은 generic)."""
     mock_client.generate = MagicMock(wraps=mock_client.generate)  # type: ignore[method-assign]
-    gen = ChunkedContentGenerator(mock_client, style="trend")
+    gen = make_gen(mock_client, style="trend")
     # plan 후 chunks까지 생성하여 body prompt 캡처
     cluster = gen.generate_pillar_cluster(sample_outline, language="ko", target_chunks=2)
     # 모든 generate 호출 중 "단락 chunk" 매칭(=body prompt)을 찾기
@@ -334,11 +341,11 @@ def test_pillar_cluster_category_includes_style(
     mock_client: MockOllamaClient, sample_outline: Outline
 ) -> None:
     """PillarCluster.category에 style 포함 (필터링 가능)."""
-    gen_trend = ChunkedContentGenerator(mock_client, style="trend")
+    gen_trend = make_gen(mock_client, style="trend")
     cluster = gen_trend.generate_pillar_cluster(sample_outline, language="ko")
     assert "trend" in cluster.category
 
-    gen_deep = ChunkedContentGenerator(mock_client, style="deep_dive")
+    gen_deep = make_gen(mock_client, style="deep_dive")
     cluster2 = gen_deep.generate_pillar_cluster(sample_outline, language="ko")
     assert "deep_dive" in cluster2.category
 
@@ -346,7 +353,7 @@ def test_pillar_cluster_category_includes_style(
 def test_stitch_single_contains_all_chunks(
     mock_client: MockOllamaClient, sample_outline: Outline
 ) -> None:
-    gen = ChunkedContentGenerator(mock_client)
+    gen = make_gen(mock_client)
     cluster = gen.generate_pillar_cluster(sample_outline, language="ko")
     html = cluster.stitch_single()
     # pillar + all chunk titles
@@ -361,7 +368,7 @@ def test_stitch_single_contains_all_chunks(
 def test_to_wp_post_specs_pillar_plus_n_chunks(
     mock_client: MockOllamaClient, sample_outline: Outline
 ) -> None:
-    gen = ChunkedContentGenerator(mock_client)
+    gen = make_gen(mock_client)
     cluster = gen.generate_pillar_cluster(sample_outline, language="ko")
     specs = cluster.to_wp_post_specs()
     # pillar 1 + chunks N

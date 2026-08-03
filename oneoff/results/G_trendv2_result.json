@@ -1,0 +1,76 @@
+{
+  "scenario": "G_trend_v2_ko",
+  "language": "ko",
+  "style": "trend",
+  "version": "v2",
+  "verify_links": true,
+  "optimize_structure": true,
+  "target_chunks": 4,
+  "rss_topic": "보완수사권 폐지, 법의 관점에서 다시 봐야",
+  "rss_source": "헤드라인제주",
+  "outline_title": "보완수사권 폐지, 법의 관점에서 다시 봄",
+  "n_chunks": 4,
+  "chunk_titles": [
+    "배경과 맥락",
+    "핵심 방법 / 전략",
+    "실제 사례 / 예시",
+    "주의사항 / 함정"
+  ],
+  "pillar_title": "보완수사권 폐지, 법의 관점에서 다시 봄 (개요)",
+  "timing_sec": {
+    "total": 444.3,
+    "cluster_generation": 388.6
+  },
+  "structure_features": {
+    "single": {
+      "internal_links": 26,
+      "external_links": 0,
+      "has_hook": true,
+      "has_cta": true,
+      "has_tldr": true,
+      "has_related": true,
+      "has_eeat": true,
+      "has_faq_details": 6
+    },
+    "pillar": {
+      "internal_links": 8,
+      "external_links": 0,
+      "has_hook": true,
+      "has_cta": true,
+      "has_tldr": true,
+      "has_related": true,
+      "has_eeat": true,
+      "has_faq_details": 6
+    },
+    "avg_chunk": {
+      "has_eeat": 1.0,
+      "has_cta": 1.0
+    }
+  },
+  "single_mode": {
+    "html_chars": 12772,
+    "wp_id": 41
+  },
+  "cluster_mode": {
+    "n_posts": 5,
+    "total_html_chars": 12094,
+    "avg_internal_links": 5.2,
+    "wp_ids": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ]
+  },
+  "html_files": {
+    "single": "G_single.html",
+    "cluster": [
+      "G_cluster_1.html",
+      "G_cluster_2.html",
+      "G_cluster_3.html",
+      "G_cluster_4.html",
+      "G_cluster_5.html"
+    ]
+  }
+}

@@ -6,14 +6,14 @@ You are a pillar page writer. Create the introduction + table of contents + conc
 - Chunks (slug + title):
 {chunk_summaries}
 
-## Output format
+## Output format (legacy media + popular blog pattern)
 ```html
-<p>Hook intro 1-2 sentences. Why this topic matters + brief intro to {topic}.</p>
+<p><strong>Nut graf</strong> (1-2 sentences): Why readers should read this NOW. The core significance of {topic}.</p>
 
 <h2>Table of Contents</h2>
 <ol>
-  <li><a href="#background">1. Background and Context</a></li>
-  <li><a href="#method">2. Core Method / Strategy</a></li>
+  <li><a href="#chunk-background">1. Background and Context</a></li>
+  <li><a href="#chunk-method">2. Core Method / Strategy</a></li>
   ...
 </ol>
 
@@ -32,7 +32,9 @@ You are a pillar page writer. Create the introduction + table of contents + conc
 ## Rules
 - Approximately {pillar_chars} characters ± 50
 - English only
-- Reference all chunk slugs as anchor links in the TOC and the body
+- Reference all chunk slugs as anchor links in the TOC and the body (`#chunk-SLUG` format — e.g., `#chunk-background`)
 - Include main keyword 1-2 times naturally
-- 3 FAQ entries (Q/A 50-100 words each)
-- 1 external link placeholder: `<a href="https://example.com">anchor text</a>`
+- 3 FAQ entries (Q/A 50-100 words each) — questions real readers might ask
+- **No external links** in pillar body. (Only verified URLs in chunk bodies are allowed.)
+- **Nut graf first sentence**: Why this matters NOW (5W1H + Why now)
+- **E-E-A-T footer**: Added automatically; do not add author/date manually

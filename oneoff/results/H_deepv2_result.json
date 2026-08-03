@@ -1,0 +1,76 @@
+{
+  "scenario": "H_deep_dive_v2_ko",
+  "language": "ko",
+  "style": "deep_dive",
+  "version": "v2",
+  "verify_links": true,
+  "optimize_structure": true,
+  "target_chunks": 4,
+  "rss_topic": "'김가영 키즈' 박정현, 프로 전향 1년 만에 LPBA 우승",
+  "rss_source": "연합뉴스",
+  "outline_title": "'김가영 키즈' 박정현, 프로 전향 1년 만에 LPBA 우승",
+  "n_chunks": 4,
+  "chunk_titles": [
+    "배경과 맥락",
+    "핵심 방법 / 전략",
+    "실제 사례 / 예시",
+    "주의사항 / 함정"
+  ],
+  "pillar_title": "'김가영 키즈' 박정현, 프로 전향 1년 만에 LPBA 우승 (개요)",
+  "timing_sec": {
+    "total": 509.1,
+    "cluster_generation": 426.5
+  },
+  "structure_features": {
+    "single": {
+      "internal_links": 26,
+      "external_links": 0,
+      "has_hook": true,
+      "has_cta": true,
+      "has_tldr": true,
+      "has_related": true,
+      "has_eeat": true,
+      "has_faq_details": 8
+    },
+    "pillar": {
+      "internal_links": 8,
+      "external_links": 0,
+      "has_hook": true,
+      "has_cta": true,
+      "has_tldr": true,
+      "has_related": true,
+      "has_eeat": true,
+      "has_faq_details": 6
+    },
+    "avg_chunk": {
+      "has_eeat": 1.0,
+      "has_cta": 1.0
+    }
+  },
+  "single_mode": {
+    "html_chars": 12947,
+    "wp_id": 47
+  },
+  "cluster_mode": {
+    "n_posts": 5,
+    "total_html_chars": 12269,
+    "avg_internal_links": 5.2,
+    "wp_ids": [
+      48,
+      49,
+      50,
+      51,
+      52
+    ]
+  },
+  "html_files": {
+    "single": "H_single.html",
+    "cluster": [
+      "H_cluster_1.html",
+      "H_cluster_2.html",
+      "H_cluster_3.html",
+      "H_cluster_4.html",
+      "H_cluster_5.html"
+    ]
+  }
+}

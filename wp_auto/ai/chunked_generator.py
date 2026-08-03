@@ -41,6 +41,8 @@ from wp_auto.ai.ollama_client import LLMClient, parse_json_response
 from wp_auto.ai.content_generator import Outline, SYSTEM_PROMPTS
 from wp_auto.ai.hook_generator import HookGenerator
 from wp_auto.ai.cta_injector import CTAInjector
+from wp_auto.ai.link_verifier import LinkVerifier
+from wp_auto.ai.structure_optimizer import StructureOptimizer
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 SUPPORTED_LANGUAGES = ("ko", "en")
@@ -225,6 +227,9 @@ class ChunkedContentGenerator:
         chunk_chars: int = DEFAULT_CHUNK_CHARS,
         target_chunks: int = DEFAULT_TARGET_CHUNKS,
         style: str = "standard",
+        verify_links: bool = False,
+        optimize_structure: bool = False,
+        author_name: str = "1인 운영자 (AI-assisted)",
     ) -> None:
         if style not in STYLES:
             raise ValueError(f"Invalid style: {style}. Supported: {STYLES}")
@@ -233,6 +238,9 @@ class ChunkedContentGenerator:
         self.chunk_chars = chunk_chars
         self.target_chunks = target_chunks
         self.style = style
+        self.verify_links = verify_links
+        self.optimize_structure = optimize_structure
+        self.author_name = author_name
         # 언어별 prompt 3종 로드
         self._templates: dict[str, dict[str, str]] = {
             lang: {
@@ -242,13 +250,29 @@ class ChunkedContentGenerator:
             }
             for lang in SUPPORTED_LANGUAGES
         }
-        # Hook/CTA 생성기는 lazy init (language별)
+        # Hook/CTA/Verifier/Optimizer — lazy init
         self._hook_gens: dict[str, HookGenerator] = {}
         self._cta_injs: dict[str, CTAInjector] = {}
+        self._link_verifier: LinkVerifier | None = None
+        self._structure_optimizers: dict[str, StructureOptimizer] = {}
         logger.info(
-            "ChunkedContentGenerator initialized: chunk_chars={}, target_chunks={}, style={}, languages={}",
-            chunk_chars, target_chunks, style, list(self._templates.keys()),
+            "ChunkedContentGenerator initialized: chunk_chars={}, target_chunks={}, style={}, verify_links={}, optimize_structure={}, languages={}",
+            chunk_chars, target_chunks, style, verify_links, optimize_structure, list(self._templates.keys()),
         )
+
+    def _get_link_verifier(self) -> LinkVerifier | None:
+        if not self.verify_links:
+            return None
+        if self._link_verifier is None:
+            self._link_verifier = LinkVerifier(timeout=5.0, max_concurrent=3)
+        return self._link_verifier
+
+    def _get_structure_optimizer(self, language: str) -> StructureOptimizer:
+        if language not in self._structure_optimizers:
+            self._structure_optimizers[language] = StructureOptimizer(
+                author_name=self.author_name, language=language
+            )
+        return self._structure_optimizers[language]
 
     def _get_hook_gen(self, language: str) -> HookGenerator:
         if language not in self._hook_gens:
@@ -421,11 +445,34 @@ class ChunkedContentGenerator:
             elapsed = __import__("time").time() - t0_time
             logger.info("  → chunk '{}' done in {:.1f}s ({}자)", st.id, elapsed, len(body))
 
+            # 외부 링크 검증 (broken link → 텍스트로 변환)
+            verifier = self._get_link_verifier()
+            if verifier:
+                body, removed = verifier.verify_and_clean_html(body)
+                if removed:
+                    logger.info("  → link verified: {} broken removed", len(removed))
+
             # style != standard면 chunk body 끝에 CTA 주입 (round-robin)
             if ctas and cta_inj:
                 cta = ctas[i % len(ctas)]
                 body = cta_inj.inject_into_html(body, cta, position="end")
                 logger.info("  → CTA injected: type={}", cta.type)
+
+            # structure optimize: chunk에는 related_items + E-E-A-T footer만
+            if self.optimize_structure:
+                optimizer = self._get_structure_optimizer(language)
+                related_items = []
+                for j, s in enumerate(subtopics):
+                    if s.id == st.id:
+                        continue
+                    # related에 들어간 것만 (이웃 2개)
+                    if s.id in related:
+                        related_items.append({
+                            "title": s.title,
+                            "url": f"#chunk-{s.id}",
+                            "description": s.summary[:80] if s.summary else "",
+                        })
+                body = optimizer.optimize_chunk(body, related_items=related_items)
 
             chunk = ChunkedPost(
                 subtopic_id=st.id,
@@ -530,6 +577,30 @@ class ChunkedContentGenerator:
                         break
                 body = cta_inj.inject_into_html(body, pillar_cta, position="end")
                 logger.info("  → pillar CTA injected: type={}", pillar_cta.type)
+
+        # 외부 링크 검증
+        verifier = self._get_link_verifier()
+        if verifier:
+            body, removed = verifier.verify_and_clean_html(body)
+            if removed:
+                logger.info("  → pillar link verified: {} broken removed", len(removed))
+
+        # structure optimize: pillar에는 TL;DR + related + E-E-A-T footer
+        # (FAQ는 LLM이 pillar body에 이미 작성 → 보강 안 함)
+        if self.optimize_structure:
+            optimizer = self._get_structure_optimizer(language)
+            # TL;DR = outline.meta_description 사용
+            tldr = outline.meta_description
+            # related = cluster chunks 전체
+            related_items = [
+                {"title": c.title, "url": f"#chunk-{c.subtopic_id}",
+                 "description": c.meta_description[:80] if c.meta_description else ""}
+                for c in chunks
+            ]
+            body = optimizer.optimize_pillar(
+                body, tldr=tldr, faqs=None, related_items=related_items
+            )
+            logger.info("  → pillar structure optimized: TL;DR + related + E-E-A-T footer")
 
         return ChunkedPost(
             subtopic_id="pillar",
