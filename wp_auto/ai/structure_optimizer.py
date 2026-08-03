@@ -2,6 +2,7 @@
 
 기능:
 - TL;DR 자동 추출 (첫 단락 또는 메타 설명 기반)
+- Article Summary ('요약 내용' h2 + 실제 기사 요약 2-3문장) 자동 주입
 - FAQ section 자동 추가 (outline.faq 활용 또는 LLM 1회)
 - E-E-A-T footer 추가 (author, last updated, 출처 표기 가이드)
 - Related articles (cluster chunks internal link)
@@ -17,6 +18,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -165,26 +167,81 @@ class StructureOptimizer:
         body_html: str,
         *,
         tldr: str = "",
+        article_summary: str = "",
+        chunk_summaries: list[str] | None = None,
         faqs: list[dict] | None = None,
         related_items: list[dict] | None = None,
     ) -> str:
-        """pillar body에 TL;DR + FAQ + Related + E-E-A-T footer 통합 주입.
+        """pillar body에 TL;DR + Article Summary + FAQ + Related + E-E-A-T footer 통합 주입.
 
         Args:
             body_html: 원본 pillar HTML
-            tldr: 한 줄 요약
+            tldr: 한 줄 요약 (top of article)
+            article_summary: 기사의 핵심 요약 2-3문장 (LLM이 작성). 없으면 chunk_summaries로 자동 생성
+            chunk_summaries: chunk별 1-2문장 요약 리스트 (article_summary 생성용)
             faqs: FAQ 리스트
             related_items: 관련 글 리스트 (cluster chunks 등)
         """
         out = body_html
         if tldr:
             out = self.wrap_tldr(out, tldr)
+        # article summary 주입: "요약 내용" h2 아래 (있는 경우) 또는 body 시작에 추가
+        if article_summary or chunk_summaries:
+            out = self._inject_article_summary(out, article_summary, chunk_summaries or [])
         if faqs:
             out = self.wrap_faq(out, faqs)
         if related_items:
             out = self.wrap_related(out, related_items)
         out = self.append_eeat(out)
         return out
+
+    def _inject_article_summary(
+        self,
+        body_html: str,
+        article_summary: str,
+        chunk_summaries: list[str],
+    ) -> str:
+        """pillar body에 '요약 내용' h2 + 실제 기사 요약 주입.
+
+        기존 "요약 내용" h2가 있으면 그 아래에 summary 삽입, 없으면 nut graf 다음에 추가.
+        """
+        # 1) chunk_summaries에서 자동 summary 생성 (article_summary가 비어있을 때)
+        if not article_summary and chunk_summaries:
+            # 첫 2개 chunk의 meta_description을 결합 (이미 1-2문장이므로 그대로 사용)
+            summary_parts = [s.strip() for s in chunk_summaries[:2] if s and s.strip()]
+            article_summary = " ".join(summary_parts)
+        if not article_summary:
+            return body_html
+        # 2) body에 "요약 내용" h2가 이미 있으면 그 아래에 p 삽입
+        if '<h2 id="요약 내용">' in body_html or '<h2>요약 내용</h2>' in body_html:
+            # h2 다음 줄에 p 삽입
+            summary_html = (
+                f'<p style="margin:12px 0 24px 0;line-height:1.7;'
+                f'font-size:15px;color:#1f2937;">{article_summary}</p>'
+            )
+            body_html = re.sub(
+                r'(<h2[^>]*>요약 내용</h2>)',
+                r'\1' + "\n" + summary_html,
+                body_html, count=1,
+            )
+            return body_html
+        # 3) "요약 내용" h2가 없으면 nut graf 다음에 추가 (fallback)
+        # nut graf p 다음에 h2+p 삽입
+        summary_block = (
+            '<h2>요약 내용</h2>\n'
+            f'<p style="margin:12px 0 24px 0;line-height:1.7;'
+            f'font-size:15px;color:#1f2937;">{article_summary}</p>\n'
+        )
+        # nut graf를 포함한 첫 <p>...</p>\n 다음
+        m = re.search(r'(<p[^>]*><strong>Nut graf</strong>.*?</p>\n)', body_html, re.DOTALL)
+        if m:
+            return body_html[:m.end()] + summary_block + body_html[m.end():]
+        # nut graf 없으면 h2 첫 등장 직전
+        m = re.search(r'(<h2)', body_html)
+        if m:
+            return body_html[:m.start()] + summary_block + "\n" + body_html[m.start():]
+        # body 시작
+        return summary_block + body_html
 
     def optimize_chunk(
         self,

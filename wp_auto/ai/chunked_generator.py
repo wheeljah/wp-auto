@@ -591,6 +591,8 @@ class ChunkedContentGenerator:
             optimizer = self._get_structure_optimizer(language)
             # TL;DR = outline.meta_description 사용
             tldr = outline.meta_description
+            # article summary: chunk summaries에서 자동 생성
+            chunk_summaries_list = [c.meta_description for c in chunks if c.meta_description]
             # related = cluster chunks 전체
             related_items = [
                 {"title": c.title, "url": f"#chunk-{c.subtopic_id}",
@@ -598,9 +600,14 @@ class ChunkedContentGenerator:
                 for c in chunks
             ]
             body = optimizer.optimize_pillar(
-                body, tldr=tldr, faqs=None, related_items=related_items
+                body,
+                tldr=tldr,
+                article_summary="",  # 빈 값이면 chunk_summaries로 자동 생성
+                chunk_summaries=chunk_summaries_list,
+                faqs=None,
+                related_items=related_items,
             )
-            logger.info("  → pillar structure optimized: TL;DR + related + E-E-A-T footer")
+            logger.info("  → pillar structure optimized: TL;DR + Article Summary + related + E-E-A-T footer")
 
         return ChunkedPost(
             subtopic_id="pillar",

@@ -1,4 +1,4 @@
-You are a pillar page writer. Create the introduction + table of contents + conclusion pillar page that links to all chunks. **Approximately {pillar_chars} characters** (300-500 word range). Write in English only.
+You are a pillar page writer. Create the introduction + summary + FAQ pillar page that links to all chunks. **Approximately {pillar_chars} characters** (300-500 word range). Write in English only.
 
 ## Inputs
 - Topic: {topic}
@@ -10,14 +10,18 @@ You are a pillar page writer. Create the introduction + table of contents + conc
 ```html
 <p><strong>Nut graf</strong> (1-2 sentences): Why readers should read this NOW. The core significance of {topic}.</p>
 
-<h2>Table of Contents</h2>
+<h2>Article Summary</h2>
+<p>A 2-3 sentence summary of what this article covers (consolidating chunks 1-2 into the key message). Naturally include the main keyword.</p>
+<p>Second paragraph (optional): One sentence on why this topic matters right now.</p>
+
+<h2>Article Summary — Table of Contents</h2>
 <ol>
   <li><a href="#chunk-background">1. Background and Context</a></li>
   <li><a href="#chunk-method">2. Core Method / Strategy</a></li>
   ...
 </ol>
 
-<p>How to read this guide 1-2 sentences.</p>
+<p>This article follows the above order; each section covers 200-400 words of the essentials.</p>
 
 <h2>Frequently Asked Questions</h2>
 <details>
@@ -26,15 +30,18 @@ You are a pillar page writer. Create the introduction + table of contents + conc
 </details>
 ... (3 entries)
 
-<p>Conclusion + CTA 1-2 sentences. Link to all chunk slugs via anchor.</p>
+<p>We hope this article addresses your questions about {topic}. For deeper understanding, read the chunk articles below in order.</p>
 ```
 
 ## Rules
 - Approximately {pillar_chars} characters ± 50
 - English only
-- Reference all chunk slugs as anchor links in the TOC and the body (`#chunk-SLUG` format — e.g., `#chunk-background`)
+- Reference all chunk slugs as anchor links in the TOC and the body (`#chunk-SLUG` format)
 - Include main keyword 1-2 times naturally
-- 3 FAQ entries (Q/A 50-100 words each) — questions real readers might ask
-- **No external links** in pillar body. (Only verified URLs in chunk bodies are allowed.)
+- "Article Summary" h2 must contain **2-3 sentences of actual article summary** (not meta-instructions)
+- "Frequently Asked Questions" with 3 entries (Q/A 50-100 words each)
+- Last paragraph: smooth transition to chunk articles
+- **No external links** in pillar body
 - **Nut graf first sentence**: Why this matters NOW (5W1H + Why now)
 - **E-E-A-T footer**: Added automatically; do not add author/date manually
+- **Do NOT use meta-expressions** like 'Table of Contents', 'FAQ', 'Conclusion' as h2 titles

@@ -37,10 +37,10 @@ def make_mock_client(*, lang: str = "ko") -> MockOllamaClient:
             ),
             # chunk_body prompt에는 "단락 chunk"라는 고유 단어
             "단락 chunk": "<p>Mock chunk body in Korean. hook + 핵심 + 실전 적용.</p>",
-            # pillar prompt에는 "Table of Contents"라는 고유 단어
-            "Table of Contents": (
+            # pillar prompt에는 "요약 내용"라는 고유 단어
+            "요약 내용": (
                 "<p>Mock pillar intro.</p>"
-                "<h2>목차 (Table of Contents)</h2>"
+                "<h2>목차 (요약 내용)</h2>"
                 "<ol><li><a href='#background'>1. 배경</a></li></ol>"
                 "<p>결론 + CTA.</p>"
             ),
@@ -70,8 +70,8 @@ def make_mock_client(*, lang: str = "ko") -> MockOllamaClient:
                 '{"id": "method", "title": "Method", "summary": "how", "focus_keyword": "y"}'
                 ']}'
             ),
-            "paragraph chunk": "<p>Mock English chunk body.</p>",
-            "Table of Contents": "<p>Mock pillar.</p><h2>Table of Contents</h2><p>...</p>",
+            "단락 chunk": "<p>Mock English chunk body.</p>",
+            "요약 내용": "<p>Mock pillar.</p><h2>요약 내용</h2><p>...</p>",
             "__HOOKS_MARKER__": (
                 '{"hooks": ['
                 '{"type": "question", "text": "Why X?", "rationale": "curiosity"},'
@@ -185,7 +185,12 @@ def test_generate_pillar_with_chunks(
     chunks = gen.generate_chunks(sample_outline, subs, language="ko")
     pillar = gen.generate_pillar(sample_outline, subs, chunks, language="ko")
     assert pillar.subtopic_id == "pillar"
-    assert "Mock pillar" in pillar.body_html or "목차" in pillar.body_html
+    # v0.6.3: pillar prompt가 "요약 내용" / "Nut graf" 등을 사용
+    assert (
+        "Mock pillar" in pillar.body_html
+        or "요약 내용" in pillar.body_html
+        or "Nut graf" in pillar.body_html
+    )
     assert pillar.next_slug == chunks[0].slug
 
 
