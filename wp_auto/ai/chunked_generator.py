@@ -31,7 +31,9 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
@@ -43,6 +45,8 @@ from wp_auto.ai.hook_generator import HookGenerator
 from wp_auto.ai.cta_injector import CTAInjector
 from wp_auto.ai.link_verifier import LinkVerifier
 from wp_auto.ai.structure_optimizer import StructureOptimizer
+from wp_auto.ai.schema_generator import SchemaGenerator
+from wp_auto.ai.affiliate_linker import AffiliateLinker
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 SUPPORTED_LANGUAGES = ("ko", "en")
@@ -230,6 +234,12 @@ class ChunkedContentGenerator:
         verify_links: bool = False,
         optimize_structure: bool = False,
         author_name: str = "1인 운영자 (AI-assisted)",
+        inject_schema: bool = False,
+        inject_affiliate: bool = False,
+        affiliate_network: str = "amazon",
+        affiliate_tag: str = "",
+        site_name: str = "",
+        site_url: str = "",
     ) -> None:
         if style not in STYLES:
             raise ValueError(f"Invalid style: {style}. Supported: {STYLES}")
@@ -241,6 +251,12 @@ class ChunkedContentGenerator:
         self.verify_links = verify_links
         self.optimize_structure = optimize_structure
         self.author_name = author_name
+        self.inject_schema = inject_schema
+        self.inject_affiliate = inject_affiliate
+        self.affiliate_network = affiliate_network
+        self.affiliate_tag = affiliate_tag
+        self.site_name = site_name
+        self.site_url = site_url
         # 언어별 prompt 3종 로드
         self._templates: dict[str, dict[str, str]] = {
             lang: {
@@ -255,9 +271,12 @@ class ChunkedContentGenerator:
         self._cta_injs: dict[str, CTAInjector] = {}
         self._link_verifier: LinkVerifier | None = None
         self._structure_optimizers: dict[str, StructureOptimizer] = {}
+        self._schema_generator: SchemaGenerator | None = None
+        self._affiliate_linker: AffiliateLinker | None = None
         logger.info(
-            "ChunkedContentGenerator initialized: chunk_chars={}, target_chunks={}, style={}, verify_links={}, optimize_structure={}, languages={}",
-            chunk_chars, target_chunks, style, verify_links, optimize_structure, list(self._templates.keys()),
+            "ChunkedContentGenerator initialized: chunk_chars={}, target_chunks={}, style={}, verify_links={}, optimize_structure={}, inject_schema={}, inject_affiliate={}, languages={}",
+            chunk_chars, target_chunks, style, verify_links, optimize_structure,
+            inject_schema, inject_affiliate, list(self._templates.keys()),
         )
 
     def _get_link_verifier(self) -> LinkVerifier | None:
@@ -273,6 +292,81 @@ class ChunkedContentGenerator:
                 author_name=self.author_name, language=language
             )
         return self._structure_optimizers[language]
+
+    def _get_schema_generator(self, language: str) -> SchemaGenerator:
+        if self._schema_generator is None:
+            self._schema_generator = SchemaGenerator(language=language)
+        return self._schema_generator
+
+    def _get_affiliate_linker(self) -> AffiliateLinker | None:
+        if not self.inject_affiliate:
+            return None
+        if self._affiliate_linker is None:
+            self._affiliate_linker = AffiliateLinker(
+                network=self.affiliate_network,
+                amazon_tag=self.affiliate_tag,
+                language=self.author_name and "ko" or "ko",  # TODO
+            )
+        return self._affiliate_linker
+
+    def inject_jsonld(
+        self,
+        body_html: str,
+        outline: "Outline",
+        chunks: list["ChunkedPost"],
+    ) -> str:
+        """pillar body 끝에 JSON-LD schema 자동 주입.
+
+        args:
+            body_html: pillar body HTML
+            outline: 원본 outline (title, meta_description, chunks)
+            chunks: chunk 리스트 (subtopic_id, title, body_html, etc.)
+        """
+        if not self.inject_schema:
+            return body_html
+        language = "ko"  # 현재는 ko만 (chunked language 기반)
+        gen = self._get_schema_generator(language)
+        schemas: list[dict] = []
+        # 1) Article
+        schemas.append(gen.article(
+            title=outline.title[:110],
+            author=self.author_name[:100],
+            date_published=datetime.now().strftime("%Y-%m-%d"),
+            description=outline.meta_description[:160],
+            url=self.site_url or "",
+            image="",  # TODO
+        ))
+        # 2) FAQ (chunk body에서 details/summary 자동 감지)
+        faqs = self._extract_faqs_from_chunks(chunks)
+        if faqs:
+            schemas.append(gen.faq(faqs))
+        # 3) Breadcrumb
+        schemas.append(gen.breadcrumb([
+            {"name": self.site_name or "Home", "url": self.site_url or "/"},
+            {"name": outline.title[:50], "url": self.site_url or ""},
+        ]))
+        # HTML 주입 (body 끝)
+        script_html = gen.to_html(schemas)
+        return body_html.rstrip() + "\n\n" + script_html
+
+    def _extract_faqs_from_chunks(
+        self,
+        chunks: list["ChunkedPost"],
+    ) -> list[dict[str, str]]:
+        """Chunk body에서 FAQ (details>summary+p) 자동 추출."""
+        faqs: list[dict[str, str]] = []
+        for ch in chunks:
+            # <details><summary>Q...</summary><p>A...</p></details>
+            for m in re.finditer(
+                r'<details[^>]*>\s*<summary[^>]*>([^<]+?)</summary>\s*<p[^>]*>([^<]+?)</p>',
+                ch.body_html,
+                re.DOTALL,
+            ):
+                q = m.group(1).strip()
+                a = m.group(2).strip()
+                if q and a:
+                    faqs.append({"q": q, "a": a})
+        return faqs[:10]  # Google 권장 10개 이하
 
     def _get_hook_gen(self, language: str) -> HookGenerator:
         if language not in self._hook_gens:
@@ -608,6 +702,11 @@ class ChunkedContentGenerator:
                 related_items=related_items,
             )
             logger.info("  → pillar structure optimized: TL;DR + Article Summary + related + E-E-A-T footer")
+
+        # JSON-LD schema 자동 주입 (pillar body 끝)
+        if self.inject_schema:
+            body = self.inject_jsonld(body, outline, chunks)
+            logger.info("  → JSON-LD schema injected (Article + FAQ + Breadcrumb)")
 
         return ChunkedPost(
             subtopic_id="pillar",

@@ -1,0 +1,85 @@
+{
+  "scenario": "K_v8_affiliate",
+  "language": "ko",
+  "style": "trend",
+  "version": "v0.8",
+  "verify_links": true,
+  "optimize_structure": true,
+  "inject_schema": true,
+  "inject_affiliate": true,
+  "target_chunks": 4,
+  "rss_topic": "산맥 넘은 폭염, 서쪽으로…최소 13일까지 비 없고 쭉 덥다",
+  "rss_source": "hani.co.kr",
+  "outline_title": "산맥 넘은 폭염, 서쪽으로…최소 13일까지 비 없고 쭉 덥다",
+  "n_chunks": 4,
+  "chunk_titles": [
+    "산맥 넘은 폭염의 배경과 맥락",
+    "산맥 넘은 폭염의 원인과 증가 추세",
+    "산맥 넘는 폭염의 영향과 예측",
+    "산맥 넘는 폭염을 대비하기 위한 현장에서의 조치"
+  ],
+  "pillar_title": "산맥 넘은 폭염, 서쪽으로…최소 13일까지 비 없고 쭉 덥다 (개요)",
+  "timing_sec": {
+    "total": 488.1,
+    "cluster_generation": 417.6
+  },
+  "structure_features": {
+    "single": {
+      "has_hook": true,
+      "has_cta": true,
+      "has_tldr": true,
+      "has_related": true,
+      "has_eeat": true,
+      "has_image": false,
+      "has_jsonld": true,
+      "has_faq_schema": false,
+      "has_article_schema": true,
+      "has_breadcrumb_schema": true,
+      "has_affiliate_disclosure": true,
+      "has_paid_link": true
+    },
+    "pillar": {
+      "has_hook": true,
+      "has_cta": true,
+      "has_tldr": true,
+      "has_related": true,
+      "has_eeat": true,
+      "has_image": false,
+      "has_jsonld": true,
+      "has_faq_schema": false,
+      "has_article_schema": true,
+      "has_breadcrumb_schema": true,
+      "has_affiliate_disclosure": false,
+      "has_paid_link": false
+    }
+  },
+  "affiliate": {
+    "asin": "B0CHWRXH8B",
+    "tag": "myblog-20",
+    "url": "https://www.amazon.com/dp/B0CHWRXH8B?tag=myblog-20&linkCode=ogi&th=1"
+  },
+  "single_mode": {
+    "html_chars": 14592,
+    "wp_id": 65
+  },
+  "cluster_mode": {
+    "n_posts": 5,
+    "wp_ids": [
+      66,
+      67,
+      68,
+      69,
+      70
+    ]
+  },
+  "html_files": {
+    "single": "K_single.html",
+    "cluster": [
+      "K_cluster_1.html",
+      "K_cluster_2.html",
+      "K_cluster_3.html",
+      "K_cluster_4.html",
+      "K_cluster_5.html"
+    ]
+  }
+}
