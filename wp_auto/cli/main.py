@@ -18,6 +18,12 @@ from wp_auto.cli.publish import list_posts_cmd, publish
 from wp_auto.cli.ui import ui
 from wp_auto.cli.verify import verify
 from wp_auto.cli.clean_mock import clean_mock
+from wp_auto.cli.ingest import (
+    ingest_url_cmd,
+    ingest_pdf_cmd,
+    research_cmd,
+)
+from wp_auto.cli.publish_md import publish_md_cmd
 from wp_auto.core.content_score import (
     ContentMetrics,
     ContentQualityLevel,
@@ -164,6 +170,12 @@ cli.add_command(ui, name="ui")
 
 # v0.3.0+: MockWP 정리 (시연/테스트 누적 posts 청소)
 cli.add_command(clean_mock, name="clean-mock")
+
+# v0.9.0: URL/PDF 입력 + 직접 작성 배포
+cli.add_command(ingest_url_cmd, name="ingest-url")
+cli.add_command(ingest_pdf_cmd, name="ingest-pdf")
+cli.add_command(research_cmd, name="research")
+cli.add_command(publish_md_cmd, name="publish-md")
 
 
 if __name__ == "__main__":

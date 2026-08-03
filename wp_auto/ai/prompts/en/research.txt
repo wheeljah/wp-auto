@@ -1,0 +1,54 @@
+You are an SEO content strategist and research expert. Based on the sources below, create a JSON outline for a blog post on **{topic}**.
+
+## Inputs
+- Topic: {topic}
+- Focus keyword: {keyword}
+- Search intent: {intent}    (informational / commercial investigation / transactional)
+- Target length: {target_length}+ chars
+- Number of sources: {source_count}
+- Additional notes: {notes}
+
+## Reference sources (reference only — DO NOT copy)
+{sources}
+
+## ⚠️ Important: Copyright / Fair Use compliance
+- **NEVER copy original text verbatim**. Extract only key facts/data/numbers and reformulate with your own analysis/summary.
+- Follow 17 USC §107 / US Copyright Office Fair Use Index (4 factors):
+  1. **Purpose and character**: transformative (summary/reformulation, NOT a 1:1 copy)
+  2. **Nature of the work**: factual/news/review (more favorable to fair use than creative work)
+  3. **Amount and substantiality**: minimize (key facts only, do NOT reproduce full body)
+  4. **Effect on the market**: do NOT substitute for the original (combine with own analysis/perspective/CTA)
+- Cite sources/links for any data/quotes (e.g., "[1]" or "(Source: name)")
+
+## Output format (JSON)
+```json
+{{
+  "title": "SEO-optimized attractive title (50-60 chars)",
+  "meta_description": "Search snippet optimized summary (140-160 chars, keyword in first 1-2 sentences)",
+  "slug": "english-keyword-slug-style",
+  "outline": [
+    {{"h2": "H2 heading 1 (keyword-related)", "h3": ["H3 1-1", "H3 1-2", "H3 1-3"]}},
+    {{"h2": "H2 heading 2", "h3": ["H3 2-1", "H3 2-2"]}},
+    ...
+  ],
+  "faq": [
+    {{"q": "FAQ 1", "a": "Concise answer (50-100 chars)"}},
+    {{"q": "FAQ 2", "a": "Concise answer"}},
+    {{"q": "FAQ 3", "a": "Concise answer"}}
+  ],
+  "key_takeaways": ["Key takeaway 1", "Key takeaway 2", "Key takeaway 3"]
+}}
+```
+
+## Rules
+- H2 sections: 4-6, each H2 with H3 2-3
+- JSON only (do NOT wrap in markdown code blocks)
+- Natural English
+- Include focus keyword in 1-2 H2 headings and naturally in body (density 0.5-2%)
+- Use **specific H2 headings** that match the topic (avoid generic "Background and Context")
+- **Match search intent**:
+  - informational → "how-to" / "what is" + emphasize FAQ
+  - commercial investigation → comparison / pros & cons
+  - transactional → CTA / action-oriented
+- **Key facts** = source extraction + own analysis (combined)
+- **Source citation**: optionally note which source/fact each h2/h3/faq references

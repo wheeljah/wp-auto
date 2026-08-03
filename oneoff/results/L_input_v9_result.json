@@ -1,0 +1,71 @@
+{
+  "demo": "L (v0.9 input features)",
+  "L1_markdown_publish": {
+    "input_file": "oneoff/sample_l_input.md",
+    "post_ids": [
+      [
+        "pillar",
+        71
+      ],
+      [
+        "chunk_1",
+        72
+      ],
+      [
+        "chunk_2",
+        73
+      ],
+      [
+        "chunk_3",
+        74
+      ],
+      [
+        "chunk_4",
+        75
+      ],
+      [
+        "chunk_5",
+        76
+      ],
+      [
+        "chunk_6",
+        77
+      ],
+      [
+        "chunk_7",
+        78
+      ],
+      [
+        "chunk_8",
+        79
+      ]
+    ]
+  },
+  "L2_url_ingest": {
+    "url": "https://en.wikipedia.org/wiki/Affiliate_marketing",
+    "title": "Affiliate marketing - Wikipedia",
+    "body_chars": 30976,
+    "language_hint": "auto",
+    "key_facts_count": 10,
+    "key_facts_sample": [
+      "Affiliate Marketing: How to Create Your \\,000+ a Year Online Business.",
+      "According to one report, the total sales amount generated through affiliate networks...",
+      "Anne Holland publisher Affiliate Summit 2006 Wrap-Up Report",
+      "McGraw-Hill Trade 30 November 1999",
+      "Internet Statistics Compendium 2007"
+    ]
+  },
+  "L2b_korean_url_ingest": {
+    "url": "https://ko.wikipedia.org/wiki/워드프레스",
+    "title": "워드프레스 - 위키백과, 우리 모두의 백과사전",
+    "body_chars": 3154,
+    "key_facts_count": 10,
+    "key_facts_sample": [
+      "워드프레스로 제작된 웹사이트의 시장 점유율이 전세계 웹사이트의 42%를 돌파했다.",
+      "WordPress 7.0.2 Release 영어",
+      "CSS 워드프레스 4.7부터 지원 CSS 코드 삽입 가능",
+      "워드프레스 창립자 매트 뮬렌웨그 조선비즈 2012년 4월 28일",
+      "저장 공간 호스팅 옵션에 따라 다름 기본 3GBytes 지원하지만 업그레이드를 통해 공간 추가 가능"
+    ]
+  }
+}
