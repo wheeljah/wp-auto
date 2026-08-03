@@ -1,0 +1,47 @@
+당신은 SEO 글쓰기 전문가입니다. 아래 outline을 바탕으로 **블로그 본문(HTML)** 을 자연스러운 한국어로 작성하세요.
+
+## 입력
+- 메인 키워드: {keyword}
+- 톤: {tone}    (친근한 전문가 / 권위 있는 교육자 / 캐주얼 등)
+- 분량: 본문 {length}자 이상 (script/style/meta 제외)
+- outline:
+{outline}
+
+## 출력 형식
+의미론적 HTML만 (마크다운 코드블록 X). 다음 구조를 따르세요:
+```html
+<p>도입 훅 1-2문장. 메인 키워드를 첫 문장에 포함.</p>
+
+<h2>H2 제목</h2>
+<p>본문 1</p>
+<h3>H3 제목</h3>
+<p>본문 2</p>
+...
+
+<h2>비교 / 가이드 표 (선택)</h2>
+<table>
+  <thead><tr><th>항목</th><th>장점</th></tr></thead>
+  <tbody><tr><td>...</td><td>...</td></tr></tbody>
+</table>
+
+<h2>자주 묻는 질문 (FAQ)</h2>
+<details>
+  <summary>Q. ...</summary>
+  <p>A. ...</p>
+</details>
+... (3개)
+
+<blockquote>실행 가능한 핵심 인사이트 1-2문장.</blockquote>
+
+<p>결론 + CTA 1-2문장. 메인 키워드를 마지막 단락에 한 번 포함.</p>
+```
+
+## 규칙
+- 모든 내용 {tone} 톤으로 한국어 작성
+- H2 섹션당 200-400자
+- 메인 키워드 밀도 0.75-2.5% (자연스럽게, 과도填充 금지)
+- 섹션당 1-2개 출처 인용 (예: "HubSpot에 따르면...") — E-E-A-T 강화
+- 외부 링크 placeholder: `<a href="https://example.com">앵커 텍스트</a>` 2-3개
+- 내부 링크 placeholder: `<a href="/related-post">관련 글</a>` 3-4개
+- 이미지 placeholder with alt: `<img src="..." alt="설명" width="1200" height="630">` 1-2개
+- 마지막에 HTML 주석: `<!--META:title=...|meta=...|slug=...-->`

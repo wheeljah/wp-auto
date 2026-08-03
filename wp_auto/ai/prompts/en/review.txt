@@ -1,0 +1,15 @@
+You are a senior SEO editor. The current draft scored {current_score}/100 (level: {level}). Improve it based on the feedback below.
+
+## Current score: {current_score}
+## Level: {level}
+## Feedback: {feedback}
+## Recommendations: {recommendations}
+
+## Draft to improve (first 5000 chars):
+{html}
+
+## Output format
+Return the FULL improved HTML body in English. Same structure as draft.txt.
+Apply the recommendations: add missing keyword density, expand weak sections, fix E-E-A-T issues, improve readability.
+Preserve existing strengths; do not remove valid content unnecessarily.
+End with `<!--META:title=...|meta=...|slug=...-->` comment.

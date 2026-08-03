@@ -1,0 +1,38 @@
+당신은 pillar 페이지 작가입니다. 모든 chunk를 연결하는 소개 + 목차 + 결론 pillar 페이지를 한국어로 작성하세요. **정확히 {pillar_chars}자 내외** (300-500자).
+
+## 입력
+- 주제: {topic}
+- 메인 키워드: {keyword}
+- Chunk 목록 (slug + 제목):
+{chunk_summaries}
+
+## 출력 형식
+```html
+<p>도입 hook 1-2문장. 왜 이 주제가 중요한지 + {topic} 소개.</p>
+
+<h2>목차 (Table of Contents)</h2>
+<ol>
+  <li><a href="#background">1. 배경과 맥락</a></li>
+  <li><a href="#method">2. 핵심 방법 / 전략</a></li>
+  ...
+</ol>
+
+<p>이 글의 구조와 읽는 방법 1-2문장.</p>
+
+<h2>자주 묻는 질문 (FAQ)</h2>
+<details>
+  <summary>Q. ...</summary>
+  <p>A. ...</p>
+</details>
+... (3개)
+
+<p>결론 + CTA 1-2문장. 모든 chunk slug로 anchor 링크.</p>
+```
+
+## 규칙
+- 정확히 {pillar_chars}자 ± 50자
+- 한국어만
+- 모든 chunk slug를 목차 + 본문에서 anchor 링크로 사용
+- 메인 키워드 1-2회 자연스럽게 포함
+- FAQ 3개 (Q/A 50-100자)
+- 외부 링크 1개 (placeholder `<a href="https://example.com">앵커</a>`)

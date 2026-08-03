@@ -1,0 +1,45 @@
+{
+  "scenario": "C_short_chunk_ko",
+  "language": "ko",
+  "max_chunks": 3,
+  "rss_topic": "[제네릭 약가 인하]③ 약값 낮춘다고 끝 아냐…제약업계 “시장 혼란·R&D 위축 막을 장치 필요” - 조선비즈",
+  "rss_source": "Chosunbiz",
+  "outline_title": "[제네릭 약가 인하]③ 약값 낮춘다고 끝 아냐…제약업계 '시장 혼란·R&D 위축 막을 장치 필요'",
+  "n_chunks": 3,
+  "chunk_titles": [
+    "배경과 맥락",
+    "핵심 방법 / 전략",
+    "실제 사례 / 예시"
+  ],
+  "pillar_title": "[제네릭 약가 인하]③ 약값 낮춘다고 끝 아냐…제약업계 '시장 혼란·R&D 위축 막을 장치 필요' (개요)",
+  "timing_sec": {
+    "outline": 316.0,
+    "cluster_generation": 250.3,
+    "total": 316.0
+  },
+  "single_mode": {
+    "html_chars": 3508,
+    "internal_links": 12,
+    "wp_id": 17
+  },
+  "cluster_mode": {
+    "n_posts": 4,
+    "total_html_chars": 3006,
+    "avg_internal_links": 3.0,
+    "wp_ids": [
+      18,
+      19,
+      20,
+      21
+    ]
+  },
+  "html_files": {
+    "single": "C_single.html",
+    "cluster": [
+      "C_cluster_1.html",
+      "C_cluster_2.html",
+      "C_cluster_3.html",
+      "C_cluster_4.html"
+    ]
+  }
+}

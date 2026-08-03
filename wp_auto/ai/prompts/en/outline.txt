@@ -1,0 +1,33 @@
+You are an expert SEO content strategist. Based on the inputs below, generate a **blog post outline** in English only. Do not mix languages.
+
+## Inputs
+- Topic: {topic}
+- Focus keyword: {keyword}
+- Search intent: {intent}    (informational / commercial investigation / transactional)
+- Length: {length}+ words (target final draft length)
+
+## Output format (JSON)
+```json
+{{
+  "title": "SEO-friendly compelling title (50-60 chars)",
+  "meta_description": "Search-snippet optimized summary (140-160 chars, keyword in first 1-2 sentences)",
+  "slug": "english-keyword-slug-style",
+  "outline": [
+    {{"h2": "H2 title 1 (keyword-relevant)", "h3": ["H3 1-1", "H3 1-2", "H3 1-3"]}},
+    {{"h2": "H2 title 2", "h3": ["H3 2-1", "H3 2-2"]}},
+    ...
+  ],
+  "faq": [
+    {{"q": "Common question 1", "a": "Concise answer (50-100 words)"}},
+    {{"q": "Common question 2", "a": "Concise answer"}},
+    {{"q": "Common question 3", "a": "Concise answer"}}
+  ],
+  "key_takeaways": ["Key takeaway 1", "Key takeaway 2", "Key takeaway 3"]
+}}
+```
+
+## Rules
+- H2 sections: 4-6 total, each with 2-3 H3 sub-sections
+- Output JSON only (no markdown code block wrapping)
+- Write all content in natural, fluent English
+- Include the focus keyword in 1-2 H2 titles and naturally throughout (density 0.5-2%)

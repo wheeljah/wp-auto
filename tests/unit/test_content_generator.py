@@ -203,7 +203,7 @@ def test_generate_draft_returns_html(
 def test_review_calls_client_with_feedback() -> None:
     """review: 피드백 + 권고사항 포함 프롬프트."""
     client = MockOllamaClient(
-        {"개선된 HTML": "<p>개선된 본문</p>"}
+        {"개선": "<p>개선된 본문</p>"}
     )
     gen = ContentGenerator(client, prompts_dir=PROMPTS_DIR)
     improved = gen.review(
@@ -216,6 +216,74 @@ def test_review_calls_client_with_feedback() -> None:
     )
     assert "개선된" in improved
     assert client.call_count == 1
+
+
+def test_generate_outline_english() -> None:
+    """영문 모드 outline: 영문 prompt 사용 + system prompt 적용."""
+    client = MockOllamaClient(
+        {"SEO-friendly": '{"title": "English title", "meta_description": "x", "slug": "x", "outline": [], "faq": [], "key_takeaways": []}'}
+    )
+    gen = ContentGenerator(client, prompts_dir=PROMPTS_DIR)
+    outline = gen.generate_outline(
+        topic="WordPress SEO", keyword="wordpress seo", intent="informational", language="en"
+    )
+    assert outline.title == "English title"
+
+
+def test_generate_draft_english() -> None:
+    """영문 모드 draft: 영문 prompt 사용."""
+    client = MockOllamaClient({"Hook intro": "<p>English draft</p>"})
+    gen = ContentGenerator(client, prompts_dir=PROMPTS_DIR)
+    outline = Outline(title="x", meta_description="x", slug="x", outline=[])
+    html = gen.generate_draft(outline, keyword="wordpress seo", language="en")
+    assert "English draft" in html
+
+
+def test_generate_full_post_english() -> None:
+    """generate_full_post with language='en' returns English GeneratedPost."""
+    client = MockOllamaClient({
+        "SEO-friendly": '{"title": "EN", "meta_description": "EN desc", "slug": "en", "outline": [{"h2": "H2", "h3": []}], "faq": [], "key_takeaways": []}',
+        "natural, fluent English": "<p>English content</p>",
+    })
+    gen = ContentGenerator(client, prompts_dir=PROMPTS_DIR)
+    post = gen.generate_full_post(
+        topic="WordPress SEO", keyword="wordpress seo", enable_review=False, language="en"
+    )
+    assert post.language == "en"
+    assert post.html == "<p>English content</p>"
+
+
+def test_generate_multilang_post_returns_dict() -> None:
+    """generate_multilang_post: 양 언어 동시 생성, dict 반환.
+
+    MockOllamaClient의 substring 매칭을 사용하므로 prompt에 unique한 키워드 사용.
+    - ko outline: "글 개요" / ko draft: "도입 훅"
+    - en outline: "SEO-friendly" / en draft: "Hook intro"
+    """
+    client = MockOllamaClient({
+        "글 개요": '{"title": "한글 제목", "meta_description": "m", "slug": "ko", "outline": [{"h2": "개요", "h3": []}], "faq": [], "key_takeaways": []}',
+        "도입 훅": "<p>한글 본문</p>",
+        "SEO-friendly": '{"title": "EN title", "meta_description": "m", "slug": "en", "outline": [{"h2": "H2", "h3": []}], "faq": [], "key_takeaways": []}',
+        "Hook intro": "<p>English content</p>",
+    })
+    gen = ContentGenerator(client, prompts_dir=PROMPTS_DIR)
+    results = gen.generate_multilang_post(
+        topic="WordPress SEO", keyword="wordpress seo", languages=["ko", "en"], enable_review=False
+    )
+    assert set(results.keys()) == {"ko", "en"}
+    assert results["ko"].language == "ko"
+    assert results["ko"].title == "한글 제목"
+    assert results["en"].language == "en"
+    assert results["en"].title == "EN title"
+
+
+def test_generate_alt_text_english() -> None:
+    """영문 alt text."""
+    client = MockOllamaClient({"ONE line": "A WordPress SEO dashboard showing score chart."})
+    gen = ContentGenerator(client, prompts_dir=PROMPTS_DIR)
+    alt = gen.generate_alt_text(keyword="wordpress seo", filename="chart.png", language="en")
+    assert "WordPress SEO" in alt
+    assert not alt.endswith(".")
 
 
 def test_generate_alt_text_strips_period() -> None:

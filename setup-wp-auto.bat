@@ -5,7 +5,7 @@ REM ============================================================
 REM 실행 내용:
 REM   1. Python venv 생성
 REM   2. 의존성 설치 (Phase 1~4 전체)
-REM   3. Ollama 확인 + llama3.1:8b 다운로드 (4.9GB)
+REM   3. Ollama 확인 + qwen2.5:7b 다운로드 (4.7GB)
 REM   4. Playwright Chromium 설치 (선택, ~200MB)
 REM   5. .env.example -> .env 복사
 REM   6. pytest로 검증
@@ -83,12 +83,12 @@ if errorlevel 1 (
 
 if not "%OLLAMA_MISSING%"=="1" (
     echo.
-    echo llama3.1:8b 다운로드 (4.9GB)...
-    ollama pull llama3.1:8b
+    echo qwen2.5:7b 다운로드 (4.7GB)...
+    ollama pull qwen2.5:7b
     if errorlevel 1 (
-        echo [WARN] pull 실패. 나중에: ollama pull llama3.1:8b
+        echo [WARN] pull 실패. 나중에: ollama pull qwen2.5:7b
     ) else (
-        echo [OK] llama3.1:8b 준비 완료
+        echo [OK] qwen2.5:7b 준비 완료
     )
 )
 

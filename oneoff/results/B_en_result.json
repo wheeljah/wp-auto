@@ -1,0 +1,53 @@
+{
+  "scenario": "B_en_chunked",
+  "language": "en",
+  "rss_topic": "Ariana Grande Exits West End’s ‘Sunday in the Park with George’ Revival Amid “Ongoing Public Scrutiny”",
+  "rss_source": "Deadline",
+  "outline_title": "Ariana Grande Exits West End’s ‘Sunday in the Park with George’",
+  "n_chunks": 6,
+  "chunk_titles": [
+    "Background and Context",
+    "Musical Overview",
+    "Impact on Performers and Cast Members",
+    "Industry Reactions and Concerns",
+    "Personal Reasons Behind the Decision",
+    "Professional Concerns"
+  ],
+  "pillar_title": "Ariana Grande Exits West End’s ‘Sunday in the Park with George’ (Overview)",
+  "timing_sec": {
+    "outline": 314.5,
+    "cluster_generation": 251.2,
+    "total": 314.5
+  },
+  "single_mode": {
+    "html_chars": 9844,
+    "internal_links": 26,
+    "wp_id": 9
+  },
+  "cluster_mode": {
+    "n_posts": 7,
+    "total_html_chars": 8415,
+    "avg_internal_links": 3.7,
+    "wp_ids": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ]
+  },
+  "html_files": {
+    "single": "B_single.html",
+    "cluster": [
+      "B_cluster_1.html",
+      "B_cluster_2.html",
+      "B_cluster_3.html",
+      "B_cluster_4.html",
+      "B_cluster_5.html",
+      "B_cluster_6.html",
+      "B_cluster_7.html"
+    ]
+  }
+}

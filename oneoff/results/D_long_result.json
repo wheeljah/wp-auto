@@ -1,0 +1,51 @@
+{
+  "scenario": "D_long_chunk_ko",
+  "language": "ko",
+  "max_chunks": 8,
+  "rss_topic": "제미나이 사용 전 확인해야 할 개인정보 보호 설정",
+  "rss_source": "우리문화신문",
+  "outline_title": "제미나이 사용 전 개인정보 보호 설정 확인하기",
+  "n_chunks": 5,
+  "chunk_titles": [
+    "배경과 맥락",
+    "핵심 방법 / 전략",
+    "실제 사례 / 예시",
+    "주의사항 / 함정",
+    "정리 / 다음 단계"
+  ],
+  "pillar_title": "제미나이 사용 전 개인정보 보호 설정 확인하기 (개요)",
+  "timing_sec": {
+    "outline": 328.3,
+    "cluster_generation": 281.9,
+    "total": 328.3
+  },
+  "single_mode": {
+    "html_chars": 5304,
+    "internal_links": 21,
+    "wp_id": 22
+  },
+  "cluster_mode": {
+    "n_posts": 6,
+    "total_html_chars": 4449,
+    "avg_internal_links": 3.5,
+    "wp_ids": [
+      23,
+      24,
+      25,
+      26,
+      27,
+      28
+    ]
+  },
+  "html_files": {
+    "single": "D_single.html",
+    "cluster": [
+      "D_cluster_1.html",
+      "D_cluster_2.html",
+      "D_cluster_3.html",
+      "D_cluster_4.html",
+      "D_cluster_5.html",
+      "D_cluster_6.html"
+    ]
+  }
+}

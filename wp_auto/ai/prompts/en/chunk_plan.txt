@@ -1,0 +1,54 @@
+You are an SEO content strategist. Divide the outline below into exactly {target_chunks} subtopics, where each subtopic becomes a short chunk article (200-400 words).
+
+## Inputs
+- Topic: {topic}
+- Focus keyword: {keyword}
+- Target chunk count: {target_chunks} (generate exactly this many)
+- Outline:
+{outline}
+
+## Output (JSON)
+```json
+{{
+  "subtopics": [
+    {{
+      "id": "background",
+      "title": "Background and Context",
+      "summary": "Why this topic matters; the basic context the reader needs in 1-2 sentences.",
+      "focus_keyword": "specific keyword"
+    }},
+    {{
+      "id": "method",
+      "title": "Core Method / Strategy",
+      "summary": "The actionable core approach in 1-2 sentences.",
+      "focus_keyword": "method keyword"
+    }},
+    {{
+      "id": "example",
+      "title": "Real Example / Case",
+      "summary": "Concrete example or data the reader can replicate, in 1-2 sentences.",
+      "focus_keyword": "example keyword"
+    }},
+    {{
+      "id": "caution",
+      "title": "Pitfalls and Cautions",
+      "summary": "Common mistakes or warnings in 1-2 sentences.",
+      "focus_keyword": "caution keyword"
+    }},
+    {{
+      "id": "summary",
+      "title": "Wrap-up / Next Steps",
+      "summary": "Key conclusion and what the reader should do next, in 1-2 sentences.",
+      "focus_keyword": "conclusion keyword"
+    }}
+  ]
+}}
+```
+
+## Rules
+- **Generate exactly {target_chunks} subtopics** (not more, not fewer)
+- Each subtopic = 1 chunk (200-400 words)
+- ids in kebab-case (lowercase, no spaces)
+- JSON only (no markdown code block wrapping)
+- Write all content in natural, fluent English
+- Try 1:1 mapping with outline H2s; merge if fewer, split if more

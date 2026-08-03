@@ -281,5 +281,58 @@ class MockWordPressClient:
             "sqlite": self._db is not None,
         }
 
+    async def delete_post(self, post_id: int) -> bool:
+        """MockWP에서 post 삭제. SQLite도 함께 정리.
+
+        Args:
+            post_id: 삭제할 post ID
+
+        Returns:
+            True if deleted, False if not found
+        """
+        if post_id not in self._posts:
+            return False
+        del self._posts[post_id]
+        # SQLite도 삭제
+        if self._db:
+            cur = self._db.cursor()
+            cur.execute("DELETE FROM posts WHERE id = ?", (post_id,))
+            self._db.commit()
+        logger.info("{} Deleted post_id={}", self._log_prefix, post_id)
+        return True
+
+    async def delete_posts(
+        self,
+        *,
+        status: str = "any",
+        keep_last: int = 0,
+        slug_prefix: str = "",
+    ) -> list[int]:
+        """조건에 맞는 여러 posts 삭제.
+
+        Args:
+            status: 'draft'/'publish'/'future'/'any'
+            keep_last: 최근 N개 유지 (0 = 전부 삭제)
+            slug_prefix: slug 시작이 이 prefix인 것만 (빈 문자열 = 모두)
+
+        Returns:
+            삭제된 post_id list
+        """
+        candidates = list(self._posts.values())
+        if status != "any":
+            candidates = [p for p in candidates if p.status == status]
+        if slug_prefix:
+            candidates = [p for p in candidates if (p.slug or "").startswith(slug_prefix)]
+        # 최신 순 정렬
+        candidates.sort(key=lambda p: p.created_at or datetime.min, reverse=True)
+        # keep_last N개 제외
+        to_delete = candidates[keep_last:] if keep_last > 0 else candidates
+
+        deleted_ids: list[int] = []
+        for post in to_delete:
+            if await self.delete_post(post.id):
+                deleted_ids.append(post.id)
+        return deleted_ids
+
 
 __all__ = ["MockWordPressClient"]

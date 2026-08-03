@@ -1,29 +1,54 @@
 """콘텐츠 생성 오케스트레이션: outline → draft → review.
 
+다국어 지원: 한국어(ko) / 영어(en) — 각 언어별 prompt set을 prompts/{lang}/ 에서 로드.
+
 사용법:
     from wp_auto.ai.ollama_client import OllamaClient
     from wp_auto.ai.content_generator import ContentGenerator
 
-    client = OllamaClient(model="llama3.1:8b")
+    client = OllamaClient(model="qwen2.5:7b")
     gen = ContentGenerator(client)
-    html = gen.generate_full_post(
+
+    # 단일 언어 (한국어 기본)
+    post = gen.generate_full_post(topic="워드프레스 SEO 7가지", keyword="워드프레스 SEO")
+
+    # 한 번에 두 언어 모두 생성
+    bilingual = gen.generate_multilang_post(
         topic="워드프레스 SEO 7가지 핵심 전략",
         keyword="워드프레스 SEO",
-        intent="informational",
-        length=3000,
+        languages=["ko", "en"],
     )
+    # bilingual["ko"].html, bilingual["en"].html
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Literal
 
 from loguru import logger
 
 from wp_auto.ai.ollama_client import LLMClient
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
+SUPPORTED_LANGUAGES = ("ko", "en")
+
+# Per-language system prompt — 강제 language isolation (qwen2.5가 중국어/일본어로 새는 것 방지)
+SYSTEM_PROMPTS: dict[str, str] = {
+    "ko": (
+        "당신은 한국어 블로그 글쓰기 전문가입니다. "
+        "모든 응답을 자연스러운 한국어로만 작성하세요. "
+        "중국어, 일본어, 영어를 포함한 다른 언어는 절대 사용하지 마세요. "
+        "사용자가 다른 언어로 요청하더라도 반드시 한국어로 답하세요."
+    ),
+    "en": (
+        "You are a professional English blog writer. "
+        "Always respond in clear, natural English only. "
+        "Never use any other language (Korean, Chinese, Japanese, etc.). "
+        "Even if the user requests another language, you must respond in English."
+    ),
+}
 
 
 @dataclass
@@ -65,19 +90,22 @@ class GeneratedPost:
     meta_description: str
     slug: str
     html: str
+    language: str = "ko"
     outline: Outline | None = None
     score: dict | None = None
     iterations: int = 1
 
 
 class ContentGenerator:
-    """AI 글 생성 오케스트레이션.
+    """AI 글 생성 오케스트레이션 (다국어 지원).
 
     흐름:
         1. outline 생성 (저비용, JSON)
         2. 본문 생성 (outline 기반 HTML)
         3. 점수화 (선택)
         4. 점수 < 75면 review + 재생성 (max 3 iterations)
+
+    다국어: language 인자 (ko/en) 또는 generate_multilang_post(languages=[...]).
     """
 
     def __init__(
@@ -91,15 +119,27 @@ class ContentGenerator:
         self.prompts_dir = prompts_dir
         self.min_score = min_score
         self.max_iterations = max_iterations
-        self._outline_template = (prompts_dir / "outline.txt").read_text(encoding="utf-8")
-        self._draft_template = (prompts_dir / "draft.txt").read_text(encoding="utf-8")
-        self._review_template = (prompts_dir / "review.txt").read_text(encoding="utf-8")
-        self._alt_template = (prompts_dir / "alt_text.txt").read_text(encoding="utf-8")
+        # 언어별 prompt 4종 로드 (ko + en)
+        self._templates: dict[str, dict[str, str]] = {
+            lang: {
+                "outline": (prompts_dir / lang / "outline.txt").read_text(encoding="utf-8"),
+                "draft": (prompts_dir / lang / "draft.txt").read_text(encoding="utf-8"),
+                "review": (prompts_dir / lang / "review.txt").read_text(encoding="utf-8"),
+                "alt": (prompts_dir / lang / "alt_text.txt").read_text(encoding="utf-8"),
+            }
+            for lang in SUPPORTED_LANGUAGES
+        }
         logger.info(
-            "ContentGenerator initialized: min_score={}, max_iterations={}",
-            min_score,
-            max_iterations,
+            "ContentGenerator initialized: min_score={}, max_iterations={}, languages={}",
+            min_score, max_iterations, list(self._templates.keys()),
         )
+
+    def _system_prompt(self, language: str) -> str:
+        """언어별 system prompt 반환 (없으면 ko fallback)."""
+        if language not in SYSTEM_PROMPTS:
+            logger.warning("Unknown language '{}', fallback to 'ko'", language)
+            language = "ko"
+        return SYSTEM_PROMPTS[language]
 
     def generate_outline(
         self,
@@ -107,13 +147,24 @@ class ContentGenerator:
         keyword: str,
         intent: str = "informational",
         length: int = 3000,
+        language: str = "ko",
     ) -> Outline:
         """글 개요 (JSON) 생성."""
-        prompt = self._outline_template.format(
+        if language not in self._templates:
+            raise ValueError(f"Unsupported language: {language}. Use one of {SUPPORTED_LANGUAGES}")
+        prompt = self._templates[language]["outline"].format(
             topic=topic, keyword=keyword, intent=intent, length=length
         )
-        logger.info("generate_outline: topic='{}', keyword='{}'", topic[:30], keyword)
-        response = self.client.generate(prompt, temperature=0.7, max_tokens=2000)
+        logger.info(
+            "generate_outline: lang={} topic='{}', keyword='{}'",
+            language, topic[:30], keyword,
+        )
+        response = self.client.generate(
+            prompt,
+            system=self._system_prompt(language),
+            temperature=0.7,
+            max_tokens=2000,
+        )
 
         from wp_auto.ai.ollama_client import parse_json_response
 
@@ -132,9 +183,12 @@ class ContentGenerator:
             # fallback: minimal outline
             return Outline(
                 title=topic,
-                meta_description=f"{topic}에 대한 완벽 가이드. {keyword} 핵심 정리.",
+                meta_description=f"{topic}에 대한 완벽 가이드. {keyword} 핵심 정리."
+                if language == "ko"
+                else f"A complete guide to {topic}. Key {keyword} insights.",
                 slug=keyword.replace(" ", "-").lower(),
-                outline=[{"h2": "개요", "h3": []}, {"h2": "결론", "h3": []}],
+                outline=[{"h2": "개요" if language == "ko" else "Overview", "h3": []},
+                         {"h2": "결론" if language == "ko" else "Conclusion", "h3": []}],
                 faq=[],
                 key_takeaways=[],
             )
@@ -145,14 +199,25 @@ class ContentGenerator:
         keyword: str,
         tone: str = "친근한 전문가",
         length: int = 3000,
+        language: str = "ko",
     ) -> str:
         """outline 기반 본문 HTML 생성."""
+        if language not in self._templates:
+            raise ValueError(f"Unsupported language: {language}. Use one of {SUPPORTED_LANGUAGES}")
         outline_str = outline.outline_text()
-        prompt = self._draft_template.format(
+        prompt = self._templates[language]["draft"].format(
             keyword=keyword, tone=tone, length=length, outline=outline_str
         )
-        logger.info("generate_draft: keyword='{}', outline_h2={}", keyword, len(outline.outline))
-        return self.client.generate(prompt, temperature=0.7, max_tokens=4000)
+        logger.info(
+            "generate_draft: lang={} keyword='{}', outline_h2={}",
+            language, keyword, len(outline.outline),
+        )
+        return self.client.generate(
+            prompt,
+            system=self._system_prompt(language),
+            temperature=0.7,
+            max_tokens=4000,
+        )
 
     def review(
         self,
@@ -162,9 +227,12 @@ class ContentGenerator:
         level: str,
         feedback: list[str],
         recommendations: list[str],
+        language: str = "ko",
     ) -> str:
         """점수 미달 시 권고 반영하여 본문 개선."""
-        prompt = self._review_template.format(
+        if language not in self._templates:
+            raise ValueError(f"Unsupported language: {language}. Use one of {SUPPORTED_LANGUAGES}")
+        prompt = self._templates[language]["review"].format(
             keyword=keyword,
             current_score=current_score,
             level=level,
@@ -172,20 +240,33 @@ class ContentGenerator:
             recommendations="; ".join(recommendations) or "없음",
             html=html[:5000],  # 토큰 절약
         )
-        logger.info("review: score={}, feedback_count={}", current_score, len(feedback))
-        return self.client.generate(prompt, temperature=0.5, max_tokens=4000)
+        logger.info("review: lang={} score={}, feedback_count={}", language, current_score, len(feedback))
+        return self.client.generate(
+            prompt,
+            system=self._system_prompt(language),
+            temperature=0.5,
+            max_tokens=4000,
+        )
 
     def generate_alt_text(
         self,
         keyword: str,
         filename: str,
         context: str = "",
+        language: str = "ko",
     ) -> str:
         """이미지 alt 텍스트 생성."""
-        prompt = self._alt_template.format(
+        if language not in self._templates:
+            raise ValueError(f"Unsupported language: {language}. Use one of {SUPPORTED_LANGUAGES}")
+        prompt = self._templates[language]["alt"].format(
             keyword=keyword, filename=filename, context=context
         )
-        response = self.client.generate(prompt, temperature=0.5, max_tokens=200)
+        response = self.client.generate(
+            prompt,
+            system=self._system_prompt(language),
+            temperature=0.5,
+            max_tokens=200,
+        )
         # 마침표 제거, 한 줄
         return response.strip().rstrip(".")
 
@@ -196,15 +277,20 @@ class ContentGenerator:
         intent: str = "informational",
         length: int = 3000,
         tone: str = "친근한 전문가",
+        language: str = "ko",
         enable_review: bool = True,
     ) -> GeneratedPost:
-        """outline + draft + (선택) review 전체 흐름.
+        """단일 언어 글 생성 (outline + draft + 선택 review).
 
         Args:
+            language: "ko" (한국어) 또는 "en" (영어)
             enable_review: True면 점수 < min_score 일 때 review + 재생성 (max max_iterations)
+
+        Returns:
+            GeneratedPost (language 필드 포함)
         """
-        outline = self.generate_outline(topic, keyword, intent, length)
-        html = self.generate_draft(outline, keyword, tone, length)
+        outline = self.generate_outline(topic, keyword, intent, length, language=language)
+        html = self.generate_draft(outline, keyword, tone, length, language=language)
 
         score_info: dict | None = None
         iterations = 1
@@ -225,10 +311,8 @@ class ContentGenerator:
                         "recommendations": result.recommendations,
                     }
                     logger.info(
-                        "iteration {}: score={:.1f} level={}",
-                        i + 1,
-                        result.total_score,
-                        result.level.value,
+                        "iteration {} (lang={}): score={:.1f} level={}",
+                        i + 1, language, result.total_score, result.level.value,
                     )
                     if result.total_score >= self.min_score:
                         break
@@ -240,6 +324,7 @@ class ContentGenerator:
                             result.level.value,
                             result.feedback,
                             result.recommendations,
+                            language=language,
                         )
                         iterations += 1
             except Exception as e:
@@ -250,10 +335,52 @@ class ContentGenerator:
             meta_description=outline.meta_description,
             slug=outline.slug,
             html=html,
+            language=language,
             outline=outline,
             score=score_info,
             iterations=iterations,
         )
 
+    def generate_multilang_post(
+        self,
+        topic: str,
+        keyword: str,
+        intent: str = "informational",
+        length: int = 3000,
+        tone: str = "친근한 전문가",
+        languages: list[str] | None = None,
+        enable_review: bool = True,
+    ) -> dict[str, GeneratedPost]:
+        """여러 언어 버전 동시 생성.
 
-__all__ = ["ContentGenerator", "GeneratedPost", "Outline"]
+        Args:
+            languages: 생성할 언어 코드 리스트. None이면 ["ko"] (한국어만).
+
+        Returns:
+            {language_code: GeneratedPost} dict. 예: {"ko": post_ko, "en": post_en}
+        """
+        if languages is None:
+            languages = ["ko"]
+        for lang in languages:
+            if lang not in SUPPORTED_LANGUAGES:
+                raise ValueError(
+                    f"Unsupported language '{lang}'. Use one of {SUPPORTED_LANGUAGES}"
+                )
+
+        results: dict[str, GeneratedPost] = {}
+        for lang in languages:
+            logger.info("generate_multilang_post: starting language={}", lang)
+            results[lang] = self.generate_full_post(
+                topic=topic,
+                keyword=keyword,
+                intent=intent,
+                length=length,
+                tone=tone,
+                language=lang,
+                enable_review=enable_review,
+            )
+        logger.info("generate_multilang_post: done. languages={}", list(results.keys()))
+        return results
+
+
+__all__ = ["ContentGenerator", "GeneratedPost", "Outline", "SUPPORTED_LANGUAGES"]

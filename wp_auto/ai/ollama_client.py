@@ -90,6 +90,10 @@ class OllamaClient:
             "options": {
                 "temperature": temperature,
                 "num_predict": max_tokens,
+                # Force CPU: GTX 1050 (Pascal, compute 6.1) PTX incompatible with
+                # ollama 0.32.5's CUDA 12.6 build. Vulkan falls back to GPU but causes
+                # slow VRAM swap on 2GB. num_gpu=0 forces pure CPU.
+                "num_gpu": 0,
             },
         }
         if system:

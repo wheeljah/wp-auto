@@ -160,7 +160,96 @@ async def test_sqlite_persistence(tmp_path: Path) -> None:
     assert post.content == "<p>P</p>"
 
 
-# === 3. Factory ===
+# === 3. delete_post / delete_posts (clean-mock용) ===
+
+@pytest.mark.asyncio
+async def test_delete_post_removes_post(client: MockWordPressClient) -> None:
+    """단일 post 삭제 → True 반환, get_post KeyError."""
+    post_id = await client.create_draft(title="X", content="<p>X</p>")
+    assert await client.delete_post(post_id) is True
+    with pytest.raises(KeyError):
+        await client.get_post(post_id)
+
+
+@pytest.mark.asyncio
+async def test_delete_post_returns_false_for_missing(client: MockWordPressClient) -> None:
+    """없는 post_id 삭제 → False."""
+    assert await client.delete_post(99999) is False
+
+
+@pytest.mark.asyncio
+async def test_delete_posts_with_status_filter(client: MockWordPressClient) -> None:
+    """status 필터: draft만 삭제."""
+    d1 = await client.create_draft(title="D1", content="<p>D</p>", status="draft")
+    d2 = await client.create_draft(title="D2", content="<p>D</p>", status="draft")
+    p1 = await client.create_draft(title="P1", content="<p>P</p>")
+    await client.publish(p1)
+
+    deleted = await client.delete_posts(status="draft")
+    assert set(deleted) == {d1, d2}
+    # publish는 살아있음
+    post_p1 = await client.get_post(p1)
+    assert post_p1.status == "publish"
+
+
+@pytest.mark.asyncio
+async def test_delete_posts_with_keep_last(client: MockWordPressClient) -> None:
+    """keep_last=N: 최근 N개 유지."""
+    ids = []
+    for i in range(5):
+        pid = await client.create_draft(title=f"p{i}", content="<p>x</p>")
+        ids.append(pid)
+    # ids = [1, 2, 3, 4, 5] (5가 최신)
+    deleted = await client.delete_posts(keep_last=2)
+    # 최신 2개 (4, 5) 유지, 나머지 (1, 2, 3) 삭제
+    assert set(deleted) == {ids[0], ids[1], ids[2]}
+    # 4, 5는 살아있음
+    await client.get_post(ids[3])
+    await client.get_post(ids[4])
+
+
+@pytest.mark.asyncio
+async def test_delete_posts_with_slug_prefix(client: MockWordPressClient) -> None:
+    """prefix 필터."""
+    a = await client.create_draft(title="A", content="<p>A</p>", slug="c-short-foo")
+    b = await client.create_draft(title="B", content="<p>B</p>", slug="c-short-bar")
+    c = await client.create_draft(title="C", content="<p>C</p>", slug="d-long-baz")
+    deleted = await client.delete_posts(slug_prefix="c-short-")
+    assert set(deleted) == {a, b}
+    # d-long-baz는 살아있음
+    await client.get_post(c)
+
+
+@pytest.mark.asyncio
+async def test_delete_posts_combined_filters(client: MockWordPressClient) -> None:
+    """status + keep_last + prefix 동시."""
+    p1 = await client.create_draft(title="A", content="<p>A</p>", slug="c-short-1", status="draft")
+    p2 = await client.create_draft(title="B", content="<p>B</p>", slug="c-short-2", status="draft")
+    p3 = await client.create_draft(title="C", content="<p>C</p>", slug="c-short-3", status="publish")
+    await client.create_draft(title="D", content="<p>D</p>", slug="d-long-1", status="draft")
+
+    # status=draft, prefix=c-short-, keep_last=1 → 가장 오래된 1개만 삭제
+    deleted = await client.delete_posts(status="draft", slug_prefix="c-short-", keep_last=1)
+    assert deleted == [p1]
+    # 나머지 살아있음
+    await client.get_post(p2)
+    await client.get_post(p3)
+
+
+@pytest.mark.asyncio
+async def test_delete_post_persists_to_sqlite(tmp_path: Path) -> None:
+    """SQLite 영속화에서도 삭제 동작."""
+    db_path = tmp_path / "test.db"
+    c1 = MockWordPressClient(db_path=db_path)
+    pid = await c1.create_draft(title="X", content="<p>X</p>")
+    assert await c1.delete_post(pid) is True
+    # 재로드
+    c2 = MockWordPressClient(db_path=db_path)
+    with pytest.raises(KeyError):
+        await c2.get_post(pid)
+
+
+# === 4. Factory ===
 
 def test_factory_returns_mock_by_default(monkeypatch) -> None:
     """환경변수 없으면 Mock."""
