@@ -1,0 +1,81 @@
+{
+  "scenario": "I_v6_random_demo",
+  "language": "ko",
+  "style": "trend",
+  "version": "v0.6.2",
+  "verify_links": true,
+  "optimize_structure": true,
+  "target_chunks": 4,
+  "rss_topic": "美·이란 4일 회담…\"호르무즈 개방 다음은 핵 협상\"",
+  "rss_source": "한국경제",
+  "outline_title": "미·이란 회담, 호르무즈 해협 개방 이후 핵 협상",
+  "n_chunks": 4,
+  "chunk_titles": [
+    "배경과 맥락",
+    "핵심 방법 / 전략",
+    "실제 사례 / 예시",
+    "주의사항 / 함정"
+  ],
+  "pillar_title": "미·이란 회담, 호르무즈 해협 개방 이후 핵 협상 (개요)",
+  "timing_sec": {
+    "total": 454.6,
+    "cluster_generation": 384.3
+  },
+  "structure_features": {
+    "single": {
+      "internal_links": 26,
+      "external_links": 0,
+      "has_hook": true,
+      "has_cta": true,
+      "has_tldr": true,
+      "has_related": true,
+      "has_eeat": true,
+      "has_image": true,
+      "has_faq_title": true,
+      "has_summary_title": true
+    },
+    "pillar": {
+      "internal_links": 8,
+      "external_links": 0,
+      "has_hook": true,
+      "has_cta": true,
+      "has_tldr": true,
+      "has_related": true,
+      "has_eeat": true,
+      "has_image": false,
+      "has_faq_title": true,
+      "has_summary_title": true
+    },
+    "avg_chunk": {
+      "has_eeat": 1.0,
+      "has_cta": 1.0
+    }
+  },
+  "single_mode": {
+    "html_chars": 13234,
+    "wp_id": 53
+  },
+  "cluster_mode": {
+    "n_posts": 5,
+    "total_html_chars": 12038,
+    "avg_internal_links": 5.2,
+    "wp_ids": [
+      54,
+      55,
+      56,
+      57,
+      58
+    ]
+  },
+  "html_files": {
+    "single": "I_single.html",
+    "cluster": [
+      "I_cluster_1.html",
+      "I_cluster_2.html",
+      "I_cluster_3.html",
+      "I_cluster_4.html",
+      "I_cluster_5.html"
+    ],
+    "image": "I_image.jpg"
+  }
+}
