@@ -13,7 +13,7 @@
 |---|---|---|
 | 수익 채널 | **제휴마케팅 (Amazon/Awin/CJ)** | 사용자 결정 2026-08-04 (AdSense는 커스텀 도메인 후 별도) |
 | 워드프레스 호스팅 | **무료 tier (Phase 1) → Cloudflare+Vultr $6/월 (Phase 2)** | 사용자 1인 운영 원칙 |
-| 테마 | **GeneratePress Free** (Phase 1) → **Newspaper** (수익화 본격 시) | 1차 출처 비교 (섹션 2) |
+| 테마 | **GeneratePress (WordPress.org 무료)** (Phase 1) → **Newspaper** (수익화 본격 시) | 1차 출처 비교 (섹션 2) |
 | 콘텐츠 구조 | **Pillar-Cluster** (pillar 3,000-5,000 단어 + cluster 6-15개 1,500-2,500 단어) | 1차 출처 (섹션 4) |
 | 자동화 도구 | **wp-auto (이 프로젝트)** — URL/PDF 입력 → 콘텐츠 자동 생성 + 직접 작성 배포 | 본 문서 (섹션 7) |
 | 입력 기능 | **2가지** — (a) URL/PDF → 자동 (b) 직접 작성 markdown → 즉시 배포 | 본 문서 (섹션 7) |
@@ -53,7 +53,7 @@ Phase 1의 목표는 **첫 affiliate commission $100 발생**까지 — 보통 S
 |---|---|---|---|---|---|---|
 | **Astra** | $47/year (Pro) | **93/100** | **2.1s** | **892 KB** | "Best overall for monetized blogs 2025" (테스트 기반) | [elitewealthplan](https://elitewealthplan.com/best-wordpress-themes-for-monetized-blogs/) |
 | **Neve** | Free / Premium | 92/100 | 2.2s | **593 KB** (가장 가벼움) | Mobile-first, AMP-ready | elitewealthplan |
-| **GeneratePress** | **Free** / $59 (Pro) | 87/100 | 2.9s | 990 KB | **<10KB footprint**, 3.95M+ downloads, fastest free theme | [imc.ad](https://imc.ad/blog/the-best-wordpress-themes-for-ad-monetization-and-speed), [nexterwp](https://nexterwp.com/blog/astra-vs-generatepress/) |
+| **GeneratePress** | **WordPress.org 무료** / $59 (Premium) | 87/100 | 2.9s | 990 KB | **<10KB footprint**, 3.95M+ downloads, fastest free theme | [imc.ad](https://imc.ad/blog/the-best-wordpress-themes-for-ad-monetization-and-speed), [nexterwp](https://nexterwp.com/blog/astra-vs-generatepress/) |
 | **Kadence** | Free / $69 (Pro) | 88/100 | 2.6s | 899 KB | Hooked elements, intelligent asset loading | imc.ad |
 | **Newspaper (tagDiv)** | **$59/year** (단일) | 85/100 | 3.0s | 1.1 MB | **23% higher RPM than average**, 120+ pre-built demos | [elitewealthplan](https://elitewealthplan.com/best-wordpress-themes-for-monetized-blogs/), [tagDiv 공식](https://tagdiv.com/newspaper/) |
 | OceanWP | Free / $77 (Pro) | 87/100 | 3.1s | 937 KB | 다목적, 큰 생태계 | elitewealthplan |
@@ -65,14 +65,14 @@ Phase 1의 목표는 **첫 affiliate commission $100 발생**까지 — 보통 S
 
 - **"Astra delivered a 17% higher ad CTR compared to the average"** — [elitewealthplan 7 Best WordPress Themes for Monetized Blogs (Tested)](https://elitewealthplan.com/best-wordpress-themes-for-monetized-blogs/)
 - **"Newspaper delivered the highest overall ad revenue in my tests, with a 23% higher RPM"** — 동일 출처
-- **"Core GeneratePress theme is 100% free for everyone"** — [GeneratePress 공식](https://generatepress.com/), [nexterwp](https://nexterwp.com/blog/astra-vs-generatepress/)
+- **"Core GeneratePress theme is 100% free for everyone"** — [WordPress.org/themes/generatepress](https://wordpress.org/themes/generatepress/) (generatepress.com/pricing/는 유료 4-tier만 표시), [nexterwp](https://nexterwp.com/blog/astra-vs-generatepress/)
 - **"<10KB Footprint, No jQuery"** (GeneratePress) — [imc.ad](https://imc.ad/blog/the-best-wordpress-themes-for-ad-monetization-and-speed)
 
 ### 2.3 테마 선정 권장 (수익화 순위)
 
 | Phase | 권장 테마 | 이유 | 가격 |
 |---|---|---|---|
-| **Phase 1 (지금, self-use)** | **GeneratePress Free** | 무료 + 10KB 이하 footprint + GeneratePress 1순위 (1차 출처 "fastest free theme") | $0 |
+| **Phase 1 (지금, self-use)** | **GeneratePress (WordPress.org 무료)** | 무료 + 10KB 이하 footprint + GeneratePress 1순위 (1차 출처 "fastest free theme") | $0 |
 | **Phase 2 (수익화 본격화, $100/월 목표)** | **Newspaper (tagDiv)** | RPM +23% (elitewealthplan) — Amazon/Awin이 트래픽이 모이면 ROI 차이 큼 | $59/year |
 | Phase 3 (선택) | **Astra Pro** | CTR +17% (elitewealthplan) — 12% 평균 + 빠른 페이지 = 광고 효율 ↑ | $47/year |
 
@@ -97,7 +97,7 @@ Phase 1의 목표는 **첫 affiliate commission $100 발생**까지 — 보통 S
 ```
 워드프레스: wordpress.org (셀프호스팅)
 호스팅: InfinityFree
-테마: GeneratePress Free
+테마: GeneratePress (WordPress.org 무료)
 SEO: Rank Math Free
 Cache: WP Super Cache (또는 LiteSpeed Cache)
 보안: Wordfence Free
@@ -423,7 +423,7 @@ wp-auto research <topic> --source <url|pdf>... [--out outline.json]
 ### 9.2 W3-W4: 워드프레스 사이트 셋업 (외부 작업)
 
 - [ ] InfinityFree 가입 + 도메인 연결 (무료 서브도메인)
-- [ ] WP 설치 + GeneratePress Free 설치
+- [ ] WP 설치 + GeneratePress (WordPress.org 무료) 설치
 - [ ] Rank Math Free, WP Super Cache, ShortPixel, UpdraftPlus, Wordfence, WPForms Lite 설치
 - [ ] Amazon/Awin/CJ affiliate 가입 + tag 발급
 - [ ] 사이트 기본 정보: about, contact, privacy (FTC 요구)

@@ -13,7 +13,7 @@
 |---|---|---|
 | **호스팅** | **InfinityFree (1순위)** / AwardSpace (대안) | ✅ |
 | **도메인** | 무료 서브도메인 (1순위) + 커스텀 도메인 연 $1-10 (선택) | ✅ |
-| **테마** | **GeneratePress Free** | ✅ |
+| **테마** | **GeneratePress (WordPress.org 무료)** | ✅ |
 | **캐싱** | WP Super Cache + Autoptimize | ✅ |
 | **CDN** | **Cloudflare Free** | ✅ |
 | **SEO** | **Rank Math Free** (Yoast보다 우위) | ✅ |
@@ -78,7 +78,7 @@
 
 ---
 
-## 3. 테마 — GeneratePress Free (1차 출처 검증)
+## 3. 테마 — GeneratePress (WordPress.org 무료) (1차 출처 검증)
 
 ### 1차 출처 비교 ([worldpressit.com](https://worldpressit.com/astra-theme-vs-generatepress-vs-kadence-which-lightweight-theme-wins/) + [wpmet.com](https://wpmet.com/kadence-vs-generatepress-vs-astra/))
 
@@ -95,14 +95,26 @@
 - wpglossy.com: "GeneratePress theme wins the speed tests... best LCP value"
 - serverwise.com: "GeneratePress is fast, and I mean fast... it clocks in with faster page loads than any other theme on the planet"
 
-### GeneratePress Free 기능
+### GeneratePress 무료 경로 (중요 — 1차 출처 기반)
+
+> ⚠️ **generatepress.com/pricing/ 에는 무료 티어가 없음** (1차 출처: [GeneratePress 공식 pricing](https://generatepress.com/pricing/) — 4-tier 유료 상품만 표시: GP Premium $59, GenerateBlocks Pro $99, GenerateCloud $99, GeneratePress One $149).
+>
+> **무료는 WordPress.org repo에 별도 배포**:
+> - 1차 출처: [WordPress.org/themes/generatepress](https://wordpress.org/themes/generatepress/) — "This theme is free but offers additional paid commercial upgrades or support. ... unlimited sites"
+> - 1차 출처: [nexterwp 2026 review](https://nexterwp.com/blog/generatepress-theme-review/) — "Free: Available on WordPress.org, unlimited sites"
+>
+> **설치 경로**:
+> 1. WP Admin → Appearance → Themes → Add New → "GeneratePress" 검색 → Install → Activate
+> 2. 또는 https://wordpress.org/themes/generatepress/ 에서 zip 다운로드 후 수동 업로드
+
+### GeneratePress 무료 (WordPress.org) 기능
 - 사이트 라이브러리, 모듈식 훅
 - Schema.org 마크업 내장 (schema 자동 생성)
 - AMP 호환
 - WooCommerce 호환
 
 ### 권장
-- **GeneratePress Free 1순위** (가장 가벼움 + 스키마 내장)
+- **GeneratePress (WordPress.org 무료) 1순위** (가장 가벼움 + 스키마 내장)
 - Astra: 스타터 템플릿 다양 (단, page weight 2배)
 - Kadence: 디자인 툴 강력 (단, GeneratePress보다 약간 무거움)
 
@@ -339,7 +351,7 @@
 ### 1단계 (지금, $0)
 1. ✅ InfinityFree 가입 + 무료 서브도메인
 2. ✅ Softaculous로 WordPress 원클릭 설치
-3. ✅ GeneratePress Free + WP Super Cache + Autoptimize
+3. ✅ GeneratePress (WordPress.org 무료) + WP Super Cache + Autoptimize
 4. ✅ Cloudflare Free (NS 변경)
 5. ✅ Rank Math Free + Wordfence Free + Really Simple SSL
 6. ✅ UpdraftPlus Free + Google Drive 연동
