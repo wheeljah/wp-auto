@@ -200,8 +200,10 @@ async def api_generate(
     intent: str = Form("informational"),
     length: int = Form(3000),
     tone: str = Form("친근한 전문가"),
+    enable_images: bool = Form(False),
+    max_images: int = Form(2),
 ) -> dict:
-    """키워드 + 옵션 → AI 초안."""
+    """키워드 + 옵션 → AI 초안 (+ 선택: 상업용 무료 image 자동 embed)."""
     try:
         from wp_auto.ai.content_generator import ContentGenerator
         from wp_auto.ai.ollama_client import OllamaClient
@@ -213,17 +215,49 @@ async def api_generate(
                 "title": "",
                 "html": "",
             }
-        gen = ContentGenerator(client, enable_review=False)  # 웹에서는 review 생략 (속도)
+        gen = ContentGenerator(client)  # 웹에서는 review는 generate_full_post에서 False로 지정
         post = gen.generate_full_post(
             topic=topic, keyword=keyword, intent=intent, length=length, tone=tone,
             enable_review=False,
         )
+        html = post.html
+        image_result: dict | None = None
+        if enable_images:
+            try:
+                import os
+                from pathlib import Path
+                from wp_auto.image.pipeline import ImagePipeline
+                assets_dir = Path("assets/images")
+                pexels_key = os.environ.get("PEXELS_API_KEY")
+                if not pexels_key:
+                    logger.warning("PEXELS_API_KEY not set, skipping image pipeline")
+                else:
+                    pipe = ImagePipeline(
+                        assets_dir=assets_dir,
+                        pexels_api_key=pexels_key,
+                    )
+                    image_result = pipe.run(
+                        draft_html=html,
+                        keyword=keyword,
+                        max_images=max_images,
+                        use_infographic_fallback=True,
+                        title=post.title,
+                        subtitle=topic[:80],
+                        aspect="16:9",
+                    )
+                    html = image_result["html"]
+            except Exception as e:
+                logger.error("image pipeline failed: {}", e)
+                image_result = {"error": str(e)}
         return {
             "title": post.title,
             "meta_description": post.meta_description,
             "slug": post.slug,
-            "html": post.html,
+            "html": html,
             "iterations": post.iterations,
+            "images": (image_result or {}).get("images", []),
+            "licenses": (image_result or {}).get("licenses", []),
+            "infographic": (image_result or {}).get("infographic"),
         }
     except Exception as e:
         logger.error("api_generate failed: {}", e)

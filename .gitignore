@@ -19,3 +19,14 @@ dist/
 Thumbs.db
 # nested clone (사용자가 실수로 clone한 폴더, 동일 repo)
 /wp-auto/
+
+# Secrets (1차 출처: hardcoded API key Git 노출 방지)
+pexels.txt
+unsplash.txt
+pixabay.txt
+*.api_key
+
+# Work / scratch (작업용 임시 파일)
+work/
+scratch/
+oneoff/results/

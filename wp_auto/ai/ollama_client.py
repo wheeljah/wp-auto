@@ -43,14 +43,15 @@ class OllamaClient:
 
     def __init__(
         self,
-        model: str = "llama3.1:8b",
-        host: str = "http://localhost:11434",
-        timeout: float = 120.0,
+        model: str | None = None,
+        host: str | None = None,
+        timeout: float = 900.0,  # CPU-only Ollama는 1500자+ HTML 생성에 5-10분 소요
     ) -> None:
-        self.model = model
-        self.host = host.rstrip("/")
+        import os
+        self.model = model or os.getenv("OLLAMA_MODEL", "llama3.1:8b")
+        self.host = (host or os.getenv("OLLAMA_HOST", "http://localhost:11434")).rstrip("/")
         self._client = httpx.Client(timeout=timeout)
-        logger.info("OllamaClient initialized: model={}, host={}", model, self.host)
+        logger.info("OllamaClient initialized: model={}, host={}", self.model, self.host)
 
     def is_available(self) -> bool:
         """Ollama 서버가 응답하는지 확인."""
