@@ -75,6 +75,8 @@ class ImagePipeline:
         subtitle: str = "",
         aspect: str = "16:9",
         save_license_json: bool = True,
+        hero_image: bool = False,
+        hero_height: int = 400,
     ) -> dict:
         """전체 파이프라인 실행.
 
@@ -85,15 +87,34 @@ class ImagePipeline:
             use_infographic_fallback: image 못 찾을 때 자체 infographic hero 생성
             title/subtitle/aspect: infographic용 (fallback일 때만)
             save_license_json: out/ 디렉토리에 licenses sidecar JSON 저장
+            hero_image: True면 본문 상단에 hero image 1장 자동 검색 + embed
+            hero_height: hero image 높이 (px, default 400)
 
         Returns:
             dict with keys:
                 - html: image가 삽입된 HTML
                 - images: local_path 리스트
                 - licenses: ImageResult.to_dict() 리스트
+                - hero: hero image path (없으면 None)
                 - infographic: fallback infographic path (없으면 None)
         """
-        # 1) 검색
+        # 0) Hero image (별도 1장 검색, 큰 해상도)
+        hero_path: Path | None = None
+        hero_meta: dict | None = None
+        if hero_image:
+            logger.info("ImagePipeline: searching hero image for keyword='{}'", keyword)
+            hero_candidates = self.resolver.search(keyword, max_results=1)
+            if hero_candidates:
+                hero_d = self.embedder.download(hero_candidates[0], max_width=1920)
+                if hero_d.local_path:
+                    draft_html = self.embedder.embed_hero(
+                        draft_html, hero_d, height=hero_height
+                    )
+                    hero_path = hero_d.local_path
+                    hero_meta = hero_d.to_dict()
+                    logger.info("Hero embedded: {}", hero_path)
+
+        # 1) 본문 image 검색
         logger.info("ImagePipeline: searching for keyword='{}'", keyword)
         images = self.resolver.search(keyword, max_results=max_images)
         logger.info("Found {} candidate images", len(images))
@@ -121,11 +142,14 @@ class ImagePipeline:
 
         # 4) 라이선스 sidecar JSON
         licenses = [img.to_dict() for img in downloaded]
-        if save_license_json and licenses:
+        if save_license_json and (licenses or hero_meta):
+            sidecar_data = {"keyword": keyword, "licenses": licenses}
+            if hero_meta:
+                sidecar_data["hero_license"] = hero_meta
             sidecar_path = self.assets_dir / f"licenses_{keyword.replace(' ', '_')[:30]}.json"
             sidecar_path.parent.mkdir(parents=True, exist_ok=True)
             sidecar_path.write_text(
-                json.dumps({"keyword": keyword, "licenses": licenses}, ensure_ascii=False, indent=2),
+                json.dumps(sidecar_data, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
             logger.info("License sidecar saved: {}", sidecar_path)
@@ -134,6 +158,7 @@ class ImagePipeline:
             "html": final_html,
             "images": [str(img.local_path) for img in downloaded if img.local_path],
             "licenses": licenses,
+            "hero": str(hero_path) if hero_path else None,
             "infographic": str(infographic_path) if infographic_path else None,
         }
 

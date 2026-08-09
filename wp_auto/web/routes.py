@@ -202,8 +202,10 @@ async def api_generate(
     tone: str = Form("친근한 전문가"),
     enable_images: bool = Form(False),
     max_images: int = Form(2),
+    hero_image: bool = Form(False),
+    hero_height: int = Form(400),
 ) -> dict:
-    """키워드 + 옵션 → AI 초안 (+ 선택: 상업용 무료 image 자동 embed)."""
+    """키워드 + 옵션 → AI 초안 (+ 선택: 상업용 무료 image 자동 embed, hero background)."""
     try:
         from wp_auto.ai.content_generator import ContentGenerator
         from wp_auto.ai.ollama_client import OllamaClient
@@ -244,6 +246,8 @@ async def api_generate(
                         title=post.title,
                         subtitle=topic[:80],
                         aspect="16:9",
+                        hero_image=hero_image,
+                        hero_height=hero_height,
                     )
                     html = image_result["html"]
             except Exception as e:
@@ -257,6 +261,7 @@ async def api_generate(
             "iterations": post.iterations,
             "images": (image_result or {}).get("images", []),
             "licenses": (image_result or {}).get("licenses", []),
+            "hero": (image_result or {}).get("hero"),
             "infographic": (image_result or {}).get("infographic"),
         }
     except Exception as e:

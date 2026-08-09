@@ -273,6 +273,137 @@ def test_embed_escapes_alt_and_attribution(assets_dir):
 # ============================================================
 # ImagePipeline — end-to-end
 # ============================================================
+def test_embed_hero_inserts_figure_after_h1(assets_dir):
+    """H1 직후에 hero <figure> + dark gradient 삽입 (1차 출처: MDN figure)."""
+    embedder = ImageEmbedder(assets_dir=assets_dir)
+    img = ImageResult(
+        source="pexels", license="Pexels", photographer="Alice",
+        source_url="https://x.com", image_url="https://x.com/hero.jpg",
+        local_path=assets_dir / "hero.png",
+        alt="hero image", attribution="by Alice via Pexels",
+    )
+    (assets_dir / "hero.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"x" * 100)
+    html_in = "<h1>OpenAI GPT-6</h1><p>intro</p><h2>section</h2><p>body</p>"
+    out = embedder.embed_hero(html_in, img, height=500)
+    # H1 직후에 figure
+    assert out.index("<h1>OpenAI GPT-6</h1>") < out.index('class="article-hero"')
+    assert 'class="article-hero"' in out
+    assert 'loading="eager"' in out
+    assert 'fetchpriority="high"' in out
+    # dark gradient overlay
+    assert "linear-gradient" in out
+    assert "rgba(0,0,0,0.55)" in out
+    # attribution figcaption
+    assert "<figcaption" in out
+    assert "by Alice via Pexels" in out
+    # height 500px
+    assert "height: 500px" in out
+
+
+def test_embed_hero_no_h1_inserts_at_start(assets_dir):
+    """H1 없으면 본문 시작에 hero 삽입."""
+    embedder = ImageEmbedder(assets_dir=assets_dir)
+    img = ImageResult(
+        source="pexels", license="Pexels", photographer="Bob",
+        source_url="https://x.com", image_url="https://x.com/hero.jpg",
+        local_path=assets_dir / "hero.png",
+        alt="h", attribution="by Bob",
+    )
+    (assets_dir / "hero.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"x" * 100)
+    html_in = "<p>no h1</p>"
+    out = embedder.embed_hero(html_in, img)
+    assert out.startswith('<figure class="article-hero"')
+    assert "<p>no h1</p>" in out
+
+
+def test_embed_hero_no_image_returns_original(assets_dir):
+    """local_path 없으면 원본 그대로."""
+    embedder = ImageEmbedder(assets_dir=assets_dir)
+    img = ImageResult(
+        source="pexels", license="Pexels", photographer="X",
+        source_url="", image_url="", local_path=None,
+        alt="", attribution="",
+    )
+    html_in = "<h1>Title</h1>"
+    out = embedder.embed_hero(html_in, img)
+    assert out == html_in
+
+
+def test_embed_hero_overlay_disabled(assets_dir):
+    """overlay=False이면 gradient div 없음."""
+    embedder = ImageEmbedder(assets_dir=assets_dir)
+    img = ImageResult(
+        source="pexels", license="Pexels", photographer="C",
+        source_url="", image_url="", local_path=assets_dir / "h.png",
+        alt="", attribution="by C",
+    )
+    (assets_dir / "h.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"x" * 100)
+    out = embedder.embed_hero("<h1>Title</h1>", img, overlay=False)
+    assert "linear-gradient" not in out
+
+
+def test_embed_hero_escapes_xss(assets_dir):
+    """XSS escape (alt + attribution). escape된 텍스트는 attribute value 안에서 안전.
+
+    `<img onerror=alert(1)>` 같은 raw HTML이 alt attribute value 안에 들어가는 경우,
+    html.escape()로 텍스트화되어 브라우저가 JS 실행 안 함.
+    진짜 XSS는 attribute value 바깥에서 `<img ... onerror=...>` 가 attribute로 직접 있는 경우.
+    """
+    embedder = ImageEmbedder(assets_dir=assets_dir)
+    img = ImageResult(
+        source="pexels", license="Pexels", photographer='<script>alert(1)</script>',
+        source_url="", image_url="", local_path=assets_dir / "h.png",
+        alt='"><img onerror=alert(1)>',
+        attribution='<script>evil</script> by Hacker',
+    )
+    (assets_dir / "h.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"x" * 100)
+    out = embedder.embed_hero("<h1>Title</h1>", img)
+    # 1) raw <script> 태그 없어야 함
+    assert "<script>" not in out
+    # 2) escape된 형태는 attribute value 안에 존재 (= 안전, 텍스트로만 표시)
+    assert "&lt;script&gt;" in out
+    assert "&lt;img onerror=alert(1)&gt;" in out
+    # 3) 진짜 XSS: attribute로 직접 onerror= 가 있는 <img> 는 없어야 함
+    #    패턴: <img [attrs] onerror=  (단, value quote 닫힌 후의 raw onerror)
+    #    <img src="..." onerror="..."/> — attribute로 직접 onerror
+    import re
+    # <img ... onerror=  (단, alt/value quote 닫힌 후) — quote 닫힘을 추적하는 단순 검사:
+    # attribute value 안의 onerror= (quote 짝 맞음) 는 안전, attribute로 직접 (quote 안 닫힘) 은 XSS
+    # 가장 단순한 검사: src= 다음 onerror= 가 직접 나오면 XSS
+    raw_xss = re.search(r'src="[^"]*"\s+onerror\s*=', out)
+    assert raw_xss is None, f"Found raw XSS vector: {raw_xss.group(0)}"
+
+
+def test_embed_background_style_injects_style(assets_dir):
+    """embed_background_style이 <style>을 </head> 직후에 삽입."""
+    embedder = ImageEmbedder(assets_dir=assets_dir)
+    img = ImageResult(
+        source="pexels", license="Pexels", photographer="D",
+        source_url="", image_url="", local_path=assets_dir / "bg.png",
+        alt="", attribution="by D",
+    )
+    (assets_dir / "bg.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"x" * 100)
+    html_in = "<html><head><title>x</title></head><body>content</body></html>"
+    out = embedder.embed_background_style(html_in, img, height=300)
+    # <style>이 </head> 직후에 (즉 </head> 이후 위치) 삽입
+    assert "</head>" in out
+    assert "<style>" in out
+    style_idx = out.index("<style>")
+    head_end_idx = out.index("</head>")
+    # <style>은 </head> **다음**에 와야 함 (</head> 인덱스보다 큼)
+    assert style_idx > head_end_idx
+    # </head>와 <style> 사이에 다른 내용 없어야 함
+    between = out[head_end_idx + len("</head>"):style_idx]
+    assert between.strip() == ""
+    # background-image: url() 포함
+    assert "background-image:" in out
+    assert "url(" in out
+    assert "linear-gradient" in out
+    assert "height: 300px" in out
+    # body content 보존
+    assert "content" in out
+
+
 def test_pipeline_e2e_with_pexels(assets_dir, pexels_key):
     """Pexels API + embed 통합 테스트. KEY 없으면 skip."""
     if not pexels_key:
@@ -333,6 +464,45 @@ def test_pipeline_fallback_to_infographic(assets_dir, pexels_key):
     # fallback infographic 생성 시 path 반환
     # (Wikimedia/NASA에서 결과 있으면 infographic 안 만들어질 수도 있음)
     assert "html" in result
+
+
+def test_pipeline_e2e_with_hero_image(assets_dir, pexels_key):
+    """hero_image=True end-to-end. Pexels 1장 hero + 본문 1장."""
+    if not pexels_key:
+        pytest.skip("PEXELS_API_KEY not set")
+    pipe = ImagePipeline(
+        assets_dir=assets_dir,
+        pexels_api_key=pexels_key,
+    )
+    try:
+        result = pipe.run(
+            draft_html=(
+                "<h1>Climate Change 2026</h1>"
+                "<p>지구 온난화 가속.</p>"
+                "<h2>원인</h2><p>온실가스.</p>"
+                "<h2>결과</h2><p>해수면 상승.</p>"
+            ),
+            keyword="climate",
+            max_images=1,
+            use_infographic_fallback=False,
+            hero_image=True,
+            hero_height=400,
+        )
+    finally:
+        pipe.close()
+    # hero image가 결과에 포함 (KEY 있고 Pexels 결과 있을 때)
+    if result.get("hero"):
+        assert Path(result["hero"]).exists()
+        # HTML에 article-hero figure 포함
+        assert "article-hero" in result["html"]
+        # 첫 H1 직후에 삽입
+        assert result["html"].index("<h1>") < result["html"].index("article-hero")
+        # sidecar JSON에 hero_license 포함
+        license_files = list(assets_dir.glob("licenses_climate*.json"))
+        if license_files:
+            import json
+            data = json.loads(license_files[0].read_text(encoding="utf-8"))
+            assert "hero_license" in data
 
 
 if __name__ == "__main__":
