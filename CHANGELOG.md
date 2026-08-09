@@ -1,208 +1,306 @@
-# Changelog
+# wp-auto CHANGELOG
 
-All notable changes to this project will be documented in this file.
+> **Dopaminews.com (multi-category news aggregator) — 1인 self-use WordPress 자동화 도구.**
+> GitHub: https://github.com/wheeljah/wp-auto
+> Site: https://dopaminews.com (Cloudflare + InfinityFree)
+> License: 프로젝트 = Apache 2.0 (코드), 콘텐츠 = dopaminews.com (모든 권리)
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+---
 
-## [Unreleased]
+## 🎯 한 줄 요약
 
-### Planned
-- v0.4.0: 안정화 (테스트 커버리지 80%, Docker 옵션, README 보강)
-- v1.0.0: 외부 공개 가능 상태 (의존성 핀 고정, 시그너처, GitHub Pages 문서)
+`NotebookLM으로 source-grounded 한국어 draft → wp-auto로 자동 image fetch + WP 발행` 워크플로우의 도구.
+또는 직접 Qwen 2.5 7B로 generate + Pexels/Wikimedia/NASA image + WP 발행.
 
-## [0.3.0] - 2026-08-02
+---
 
-### Added — Phase 4: Web UI (1인 self-use)
+## 📊 현재 상태 (v0.10.1 + launchers + NotebookLM)
 
-**FastAPI 기반 로컬 웹 UI**
-- `wp_auto/web/server.py` — FastAPI app factory + uvicorn 진입점
-  - `wp-auto ui` 명령으로 시작 (기본 `http://127.0.0.1:8765`)
-  - `WP_AUTO_PORT` 환경변수로 포트 변경 가능 (예: 8765 충돌 시 7777)
-  - localhost only, 인증 없음 (1인 self-use)
-- `wp_auto/web/routes.py` — 7개 페이지 + 7개 API
-  - `GET /` — 대시보드 (최근 발행 5개)
-  - `GET /verify` + `POST /api/verify` — 콘텐츠 + (--full) SEO 통합 점수화
-  - `GET /generate` + `POST /api/generate` — Ollama AI 초안 생성 (1~3분)
-  - `GET /publish` + `POST /api/publish` — 점수화 게이트 + WP 발행
-  - `GET /optimize` + `POST /api/optimize` — Pillow 이미지 WebP/AVIF
-  - `GET /measure` + `POST /api/measure` — Playwright CWV (LCP/INP/CLS)
-  - `GET /settings` + `GET /api/posts` + `GET /api/health` — 설정 + 글 목록 + 헬스 체크
-- `wp_auto/web/templates/` — 7개 HTML (base + 6 페이지)
-  - TailwindCSS CDN (빌드 불필요)
-  - vanilla JS (AJAX, 진행 표시, 결과 렌더링)
-- `wp_auto/cli/ui.py` — `wp-auto ui` CLI 명령
-  - `--port`, `--host`, `--reload` 옵션
-- `tests/unit/test_web.py` — 18개 (FastAPI TestClient, 7개 페이지 + 7개 API + 404 + 정적 자산)
+| 항목 | 상태 | 출처 |
+|---|---|---|
+| **테스트** | **377 passed** (1 warning) | `pytest tests/unit` |
+| **모델** | Qwen 2.5 7B (Apache 2.0, 상업용 OK) | [HuggingFace LICENSE](https://huggingface.co/Qwen/Qwen2.5-7B/blob/main/LICENSE) |
+| **Image source** | Pexels (KEY ✅) + Wikimedia + NASA | [Pexels](https://www.pexels.com/license/) + [Wikimedia](https://commons.wikimedia.org/wiki/Commons:Licensing) + [NASA](https://www.nasa.gov/nasa-brand-center/images-and-media/) |
+| **WP 발행** | Mock (SQLite) 또는 Real (InfinityFree REST API 차단 → 수동) | `wp_auto/cli/publish.py` + `publish_md.py` |
+| **NotebookLM** | 워크플로우 가이드 + inbox/ 통합 | [Google blog 2026-07](https://blog.google/innovation-and-ai/products/notebooklm/better-research-notebooklm/) |
+| **Hero image** | `<figure class="article-hero">` + dark gradient | [MDN figure](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/figure) |
 
-### Tested
-- **149 passed** in 6.32s
-  - 기존 131 + web 18
-- ruff: All checks passed
-- 7개 페이지 라이브 검증: 200 OK (`/api/health` 정상 응답)
+---
 
-### Project Structure (v0.3.0)
+## 🆕 v0.10.x (2026-08-09)
+
+### v0.10.1 — hero image + background style
+**commit `01f4c3e`**
+- `ImageEmbedder.embed_hero()` — 첫 H1 직후 `<figure class="article-hero">` + dark gradient + attribution
+- `ImageEmbedder.embed_background_style()` — CSS background-image 방식 (alternative)
+- `ImagePipeline.run()` 에 `hero_image=True` + `hero_height=400` 옵션
+- `routes.py /api/generate` 에 `hero_image` + `hero_height` Form fields
+- +7 tests → **377 total**
+- 1차 출처: [MDN HTML figure](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/figure)
+
+### v0.10.0 — image pipeline
+**commit `9e2d410`**
+- `wp_auto/image/` 모듈 5개 추가 (~1100 lines):
+  - `models.py` — ImageResult + LicenseKind
+  - `source_resolver.py` — Pexels + Wikimedia + NASA 통합
+  - `generator.py` — PIL infographic (16:9/9:16/1:1)
+  - `embedder.py` — HTML 자동 `<figure>` 삽입 + WebP 변환
+  - `pipeline.py` — orchestrator + license sidecar JSON
+- `routes.py /api/generate` — `enable_images=true` 옵션
+- `.gitignore` — `pexels.txt`, `work/`, `oneoff/results/` 차단
+- `start-ollama.bat`, `start-wp-auto.bat` 작성 (cp949 cmd safe)
+- +16 tests → **370 total**
+- 1차 출처: [Pexels API docs](https://www.pexels.com/api/documentation/), [Wikimedia Commons Licensing](https://commons.wikimedia.org/wiki/Commons:Licensing), [Wikimedia User-Agent policy](https://meta.wikimedia.org/wiki/User-Agent_policy)
+
+### v0.10.x — NotebookLM workflow + inbox
+**commit `cb588ac`**
+- `docs/notebooklm_workflow.md` — 10-step 가이드
+- `inbox/` — NotebookLM export .md 저장소 (로컬 only)
+- `inbox/README.md` + `inbox/news_template.md` (frontmatter 템플릿)
+- 1차 출처: [Google blog 2026-07](https://blog.google/innovation-and-ai/products/notebooklm/better-research-notebooklm/), [2025-08 Blog Post format](https://blog.google/innovation-and-ai/models-and-research/google-labs/notebooklm-student-features/), [Workspace Updates 2026-03](https://workspaceupdates.googleblog.com/2026/03/new-ways-to-customize-and-interact-with-your-content-in-NotebookLM.html), [Google blog 한국어](https://blog.google/intl/ko-kr/company-news/technology/notebooklm-audio-overviews-50-languages-kr/)
+
+### v0.10.x — Server launchers (Desktop shortcut)
+**commit `987958d`**
+- `start-both.bat` — 한 번 클릭으로 Ollama + wp-auto UI 2개 서버 동시 실행
+- `make-shortcuts.ps1` — Desktop에 2개 `.lnk` (Ollama Server, wp-auto UI)
+- `make-shortcuts.bat` — PowerShell Bypass wrapper
+
+### v0.10.x — Path rename (진행 중)
+**commit `c7a5c0d`**
+- `.bat/.ps1` 경로 `wp-auto` → `wp_auto` update (commit)
+- **디렉토리 rename은 OS file lock으로 막힘** — 시스템 재시작 후 `Rename-Item D:\Google_blog\wp-auto D:\Google_blog\wp_auto` 필요
+
+---
+
+## 📜 v0.1 ~ v0.9 (이전 세션)
+
+### v0.9 — URL/PDF 입력 + 직접 작성 markdown
+**commit `b3a667b`**
+- News article URL / PDF → 한국어 초안 (NotebookLM style)
+- 직접 작성 markdown → `publish-md` CLI
+- 무료 vs 자체 구현 분석
+
+### v0.8 — JSON-LD schema + Amazon affiliate + FTC disclosure
+**commit `c63c8d8`**
+- JSON-LD 자동 생성 (Schema.org)
+- Amazon affiliate 자동 삽입
+- FTC disclosure (영문, 한국어)
+
+### v0.7 — 제휴마케팅 워드프레스 셀프호스팅 가이드
+**commit `a1f9bd4`**
+- Amazon Associates / Awin / CJ Affiliate 가이드
+- 180일 내 $100 commission 목표
+
+### v0.6.x — chunked pillar-cluster + bilingual
+- `c7a5c0d` v0.6.3 — 주제 맞춤 subtopic + 실제 요약 + 자연스러운 마무리
+- `6204a86` v0.6.2 — 랜덤 뉴스 end-to-end 시연
+- `3a1e482` v0.6.2 — 이미지 무료 소스 + 구조/문장 정리
+- `050d7cc` v0.6.1 — H 당구 hallucination 수정 + F/G 기사 이미지
+- `0c7c1a8` v0.6.0 — link verification + structure optimization
+
+### v0.5 — HookGenerator + CTAInjector
+**commit `3357281` + `fb9fa25`**
+- 트렌드 + deep_dive style
+- Chunked pillar-cluster + bilingual
+- `clean-mock` CLI
+
+### v0.1~v0.4 (Phase 1-4)
+- 기본 content generation pipeline
+- Mock / Real WP client
+- FastAPI Web UI
+- 한글 / 영문 bilingual
+- HTML parser + content score
+- E-E-A-T / SEO 자동화
+
+---
+
+## 🏗️ 아키텍처
+
+```
+┌──────────────────────────────────────────────────────┐
+│                  wp-auto pipeline                    │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│  1) Draft     Ollama (qwen2.5:7b) + custom prompt    │
+│     OR        NotebookLM export (inbox/*.md)         │
+│            ↓                                         │
+│  2) Image     Pexels API (KEY) / Wikimedia / NASA     │
+│            Hero (1장) + Body (max 2장)               │
+│            WebP 변환 + License sidecar JSON          │
+│            ↓                                         │
+│  3) Score     content_score 100점 (75+ PASS)         │
+│            + H2 / FAQ / 출처 / 1차 경험 / 비교표     │
+│            ↓                                         │
+│  4) Publish   Mock (SQLite) 또는 Real WP (REST API)  │
+│            InfinityFree = REST API 차단 → 수동       │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 모듈 구조
 ```
 wp-auto/
-├── wp_auto/
-│   ├── ai/                       # W2: LLM 통합
-│   ├── cli/
-│   │   ├── main.py                # 최상위 (--version, doctor, example, verify, publish, list-posts, ui)
-│   │   ├── verify.py              # 콘텐츠 + SEO 점수화
-│   │   ├── publish.py             # WP 발행 (Mock/Real)
-│   │   └── ui.py                  # v0.3.0: Web UI 시작
-│   ├── core/                      # 점수화, SEO 분석
-│   ├── optimize/                  # W3: 이미지, lazy, CWV
-│   ├── wp/                        # W4: WP 연동
-│   └── web/                       # v0.3.0: FastAPI UI
-│       ├── server.py
-│       ├── routes.py
-│       └── templates/             # 7개 HTML
-└── tests/unit/                    # 8개 파일, 149개 테스트
+├── ai/
+│   ├── content_generator.py    # Qwen 2.5 7B
+│   ├── ollama_client.py         # Ollama API
+│   ├── markdown_loader.py       # .md → HTML
+│   ├── schema_generator.py      # JSON-LD
+│   ├── affiliate_linker.py      # Amazon
+│   └── source_ingestor.py       # URL/PDF → text
+├── image/                       # v0.10.0+
+│   ├── models.py                # ImageResult
+│   ├── source_resolver.py       # Pexels + Wikimedia + NASA
+│   ├── generator.py              # PIL infographic
+│   ├── embedder.py              # <figure> + hero embed
+│   └── pipeline.py              # orchestrator
+├── cli/
+│   ├── ui.py                    # FastAPI Web UI
+│   ├── publish.py               # Real WP
+│   ├── publish_md.py            # .md → WP
+│   ├── ingest.py                # URL/PDF ingest
+│   └── verify.py                # content score
+├── core/
+│   ├── content_score.py         # 100점 채점
+│   ├── html_parser.py           # HTML 메트릭
+│   └── seo_analyzer.py
+├── optimize/
+│   ├── image_optimizer.py       # WebP/AVIF
+│   ├── cwv_measurer.py          # Core Web Vitals
+│   └── lazy_loader.py
+├── web/                          # FastAPI
+│   ├── server.py
+│   └── routes.py                # /api/generate
+├── wp/                          # WP client
+│   ├── client.py / factory.py
+│   ├── mock_client.py           # SQLite
+│   └── real_client.py           # REST API
+├── integrations/
+│   └── visitor_timezone.js
+├── docs/                        # 가이드
+│   ├── notebooklm_workflow.md
+│   ├── affiliate_marketing_setup.md
+│   ├── wp_admin_generatepress_setup.md
+│   ├── wordpress_api_auto_publish.md
+│   ├── monetization_blog_plan.md
+│   └── ...
+├── inbox/                       # NotebookLM export (로컬 only)
+│   ├── README.md
+│   └── news_template.md
+├── assets/images/               # 다운로드 image (WebP)
+├── out/                         # 생성 초안 (로컬)
+├── data/wp_auto.db              # Mock WP DB
+├── tests/unit/                  # 377 tests
+└── start-both.bat / make-shortcuts.ps1/bat
 ```
 
-### Notes
-- 1인 self-use 패턴 확정: 도구 우선 빌드 + HTML UI + 로컬 PC + localhost only
-- 8000/9000 포트 점유 중 → 8765 기본, 충돌 시 환경변수 `WP_AUTO_PORT` 또는 CLI `--port`
-- W5/W6 (분석/자동화) 보류 — 1인용 ROI 낮음, score history만 슬림 버전으로 추후 검토
-- 외부 공개 시(v1.0) 풀 W5/W6 + Docker + 문서 사이트
+---
 
-## [0.2.0] - 2026-08-02
+## 🔄 워크플로우 3가지
 
-## [0.2.0] - 2026-08-02
+### A. NotebookLM (source-grounded) — **추천**
+1. News URL → NotebookLM source 추가
+2. Studio → Reports → Blog Post (한국어) → Download .md
+3. Nano Banana image generate → Download PNG
+4. `inbox/<slug>.md` 저장 (frontmatter 보강)
+5. Hero image → `assets/images/<slug>_hero.png`
+6. `python -m wp_auto publish-md inbox/<slug>.md` → WP 발행
 
-### Added — Phase 2~3: AI + 최적화 + WP 연동
+### B. Qwen 2.5 7B (현재 워크플로우)
+1. UI: `http://127.0.0.1:8767/generate` 접속
+2. Topic + keyword 입력
+3. `enable_images=true` + `hero_image=true`
+4. Submit → 자동 draft + image + WebP
+5. WP 발행 (Mock DB 또는 수동)
 
-**W2 - AI 콘텐츠 생성 (Ollama)**
-- `wp_auto/ai/ollama_client.py` — OllamaClient (httpx), MockOllamaClient, LLMClient Protocol
-  - 100% 무료, 온디바이스, API 키 불필요
-  - Ollama 미설치 환경에서도 Mock으로 단위 테스트 가능
-- `wp_auto/ai/content_generator.py` — ContentGenerator 오케스트레이션
-  - 흐름: outline (JSON) → draft (HTML) → review (점수 < 75 시)
-  - 자동 점수화 게이트 + 최대 max_iterations (default 3) 반복
-- `wp_auto/ai/prompts/`: outline.txt, draft.txt, review.txt, alt_text.txt
-  - 자료 `워드프레스_자동화1.txt` L137-141의 "AI 80% + 사람 20% 하이브리드" 모델 구현
-- `tests/unit/test_content_generator.py` — 20개 (MockOllamaClient + Outline/GeneratedPost)
+### C. NotebookLM + wp-auto 하이브리드
+- 1차 source-grounded: NotebookLM
+- Image 다양성: Pexels/Wikimedia (wp-auto)
+- WP 발행: publish-md 자동화
 
-**W3 - 최적화**
-- `wp_auto/optimize/image_optimizer.py` — Pillow WebP/AVIF 변환 + 리사이즈
-  - EXIF 회전 보정, LANCZOS 리사이즈, 평균 -40% 크기 감소
-- `wp_auto/optimize/lazy_loader.py` — HTML lazy loading + width/height 자동 주입
-  - 첫 번째 img는 LCP로 `loading="eager" + fetchpriority="high"` (자료 `범용_로직1.txt` L301-308)
-- `wp_auto/optimize/cwv_measurer.py` — Playwright + web-vitals 측정
-  - 3회 반복 중앙값, 모바일 뷰포트 (375x812), LCP/INP/CLS Good/Needs Improvement/Poor 판정
-  - 자동 권고 생성 (LCP > 2.5s → preload, INP > 200ms → defer JS, CLS > 0.1 → dimensions)
-- `tests/unit/test_image_optimizer.py` — 13개
-- `tests/unit/test_cwv_measurer.py` — 15개 (rating/recommendations 단위)
+---
 
-**W4 - WordPress 연동 (도구 우선 빌드)**
-- `wp_auto/wp/client.py` — `WordPressClient` Protocol + Post/Category/Media dataclass
-- `wp_auto/wp/mock_client.py` — `MockWordPressClient` (in-memory + SQLite 옵션)
-  - SQLite 모드: 여러 CLI 호출에 걸쳐 데이터 유지
-  - 모든 CRUD 메서드 구현 (create_draft, update_post, publish, schedule_publish, upload_image 등)
-- `wp_auto/wp/real_client.py` — `RealWordPressClient` (httpx + WordPress Application Password)
-  - HTTP Basic Auth, Rate Limiter (5분당 100req)
-  - 5분 window 토큰 버킷 알고리즘
-- `wp_auto/wp/factory.py` — `get_wp_client()` 환경변수 자동 라우팅
-  - `WP_SITE_URL` 비어있거나 `WP_MOCK=true` → Mock
-  - `DB_PATH` 환경변수로 SQLite 영속화 활성화
-- `wp_auto/cli/publish.py` — `wp-auto publish <html>` + `wp-auto list-posts`
-  - 점수화 게이트 (75점 미만 + status=publish/future면 차단, --force로 무시)
-  - HTML에서 <h1>/<title> 추출, canonical URL에서 slug 추출
-- `tests/unit/test_mock_wp_client.py` — 18개 (CRUD + SQLite 영속화 + factory)
+## ⚠️ 알려진 이슈
 
-### Tested
-- **131 passed** in 4.87s
-  - content_score: 19 + html_parser: 21 + seo_analyzer: 25 + content_generator: 20 +
-    image_optimizer: 13 + cwv_measurer: 15 + mock_wp_client: 18
-- ruff: All checks passed
+| # | 이슈 | 해결 |
+|---|---|---|
+| 1 | **PowerShell 5.1 + 한글 UTF-8 큰 본문 = Latin-1 mojibake** | Python httpx + `Path.write_text(encoding='utf-8')` 사용. PowerShell 7 (`pwsh`) 권장. |
+| 2 | **Wikimedia API 403 Forbidden** | `User-Agent` 헤더 필수 (`wp-auto/1.0 (https://github.com/wheeljah/wp-auto; wheeljah@gmail.com) Python/3.14`) |
+| 3 | **Qwen 2.5 7B raw 짧음 (1.6-4KB)** | 후처리 (E-E-A-T/FAQ/출처/비교표) 또는 `length=5000+` |
+| 4 | **InfinityFree REST API 차단** | WP Admin에서 수동 publish (Real mode) 또는 Mock mode (로컬) |
+| 5 | **OneDrive/D:\Google_blog\wp-auto OS file lock** (rename 막힘) | 시스템 재시작 후 `Rename-Item D:\Google_blog\wp-auto D:\Google_blog\wp_auto` |
+| 6 | **Qwen 2.5 3B/72B = Research License (non-commercial)** | **Qwen 2.5 7B/14B/32B만 사용** (Apache 2.0) |
 
-### Integration Smoke
-- `python -m wp_auto publish tests/fixtures/excellent_post.html` → post_id=1 생성 (Mock, SQLite 영속화)
-- `python -m wp_auto list-posts` → post_id=1 표시
-- `ollama pull llama3.1:8b` (4.9GB) → AI 초안 생성 가능
+---
 
-### Project Structure
-```
-wp-auto/
-├── wp_auto/
-│   ├── ai/                       # W2: LLM 통합
-│   │   ├── ollama_client.py
-│   │   ├── content_generator.py
-│   │   └── prompts/
-│   ├── cli/
-│   │   ├── main.py                # 최상위 (--version, doctor, example, verify, publish, list-posts)
-│   │   ├── verify.py              # 콘텐츠 + SEO 점수화
-│   │   └── publish.py             # WP 발행 (Mock/Real)
-│   ├── core/                      # 점수화, SEO 분석
-│   ├── optimize/                  # W3: 이미지, lazy, CWV
-│   │   ├── image_optimizer.py
-│   │   ├── lazy_loader.py
-│   │   └── cwv_measurer.py
-│   └── wp/                        # W4: WP 연동
-│       ├── client.py              # Protocol
-│       ├── mock_client.py         # Mock
-│       ├── real_client.py         # Real
-│       └── factory.py             # 라우팅
-└── tests/unit/                    # 7개 파일, 131개 테스트
+## 🛠️ 사용법 (다음 사이클)
+
+### 1) Ollama + wp-auto UI 실행
+```powershell
+# 옵션 1: 단일 클릭
+D:\Google_blog\wp-auto\start-both.bat
+
+# 옵션 2: Desktop shortcut (1회 setup)
+D:\Google_blog\wp-auto\make-shortcuts.bat
+# → Desktop에 "Ollama Server (Google_blog).lnk" + "wp-auto UI (Google_blog).lnk" 생성
 ```
 
-### Notes
-- 도구 우선 빌드 패턴 유지: 실 WP 사이트 없이 모든 모듈 단독 실행 가능
-- Phase 4 (분석/리포트) + Phase 5 (안정화) 진행 예정
-- 0.x.y 버전이므로 호환성 깨는 변경 자유롭게 가능
+### 2) WP 발행 워크플로우
+- **A. NotebookLM** → `inbox/<slug>.md` → `publish-md` → WP
+- **B. UI** (`http://127.0.0.1:8767`) → Generate → Publish
+- **C. CLI** (Python httpx 직접 호출)
 
-## [0.1.0] - 2026-08-02
+### 3) WP 수동 publish (InfinityFree)
+1. `https://dopaminews.com/wp-admin/edit.php` 접속
+2. Draft → Publish 클릭
+3. 시크릿 창에서 `https://dopaminews.com/<slug>` 🔒 확인
 
-## [0.1.0] - 2026-08-02
+---
 
-### Added — Phase 1: WP-독립 코어
+## 🎯 다음 사이클 (사용자 다음 단계)
 
-**콘텐츠 점수화 (Day 1)**
-- `wp_auto/core/content_score.py` — `SpecializedContentOptimizer` 이식
-  - 자료 `범용_로직1.txt` L55-272 기반
-  - 4개 카테고리 100점 만점: content_depth (40) / eeat (25) / seo (20) / speed (15)
-  - 합격 기준: 90+ EXCELLENT, 75+ PASS, <75 FAIL
-- `wp_auto/core/html_parser.py` — `parse_html_to_metrics()` (D2)
-  - 15+ 휴리스틱으로 HTML → ContentMetrics 자동 변환
-  - `_count_chars` 버그 학습: soup 변형 회피 (html 직접 받기)
-- `wp_auto/core/seo_analyzer.py` — `RankMathStyleAnalyzer` (D3)
-  - 4개 카테고리 100점: basic_seo (30) / additional (40) / title_readability (15) / content_readability (15)
-  - 22개 SEO 체크 항목 (자료 `워드프레스_자동화1.txt` L165-228 기반)
-  - 키워드 밀도, URL slug 매칭, 단락 길이 등
+1. **시스템 재시작** + `Rename-Item D:\Google_blog\wp-auto D:\Google_blog\wp_auto` (file lock 해제)
+2. **PowerShell 2개 창 띄우기** (Ollama + UI) 또는 Desktop .lnk 더블클릭
+3. **첫 글 발행** (NotebookLM or UI)
+4. **5개 generate** (Science & Health, World & Politics, Climate & Environment, Culture & Media) — Tech & AI (v4) + Business & Finance (business_1)는 이미 생성됨
+5. **GSC 등록** + Affiliate 마케팅 (CJ → Amazon → Awin)
+6. **180일 내 $100 commission 목표**
 
-**CLI 진입점 (D2, D6, D7)**
-- `wp-auto --version` — 버전 출력
-- `wp-auto doctor` — 환경 + 의존성 + 점수화 코어 점검
-- `wp-auto example` — EXCELLENT 케이스 실행 (자료 원본 sample)
-- `wp-auto verify <html-file>` — 콘텐츠 점수화
-- `wp-auto verify <html-file> --focus-keyword "X"` — 키워드 자동 체크
-- `wp-auto verify <html-file> --full` — **콘텐츠 + SEO 통합 점수 카드**
-- `wp-auto verify <html-file> --json` — JSON 출력 (CI/CD)
-- `wp-auto verify <html-file> --save-report FILE` — 마크다운 리포트
+---
 
-**테스트 (65개)**
-- `tests/unit/test_content_score.py` — 19개 (점수화 코어 단위)
-- `tests/unit/test_html_parser.py` — 21개 (HTML 파싱)
-- `tests/unit/test_seo_analyzer.py` — 25개 (SEO 분석)
-- `tests/fixtures/excellent_post.html` (5KB) + `tests/fixtures/thin_post.html` (250B)
+## 📊 통계
 
-**문서**
-- 기획서 v0.2 (`기획서.md`)
-- 코딩계획서 v0.2 (`코딩계획서.md`)
-- README.md (Day 1~D7 결과 + 통합 점수 카드 예시)
-- LICENSE (MIT)
-- CHANGELOG.md (이 파일)
+- **Total commits**: 24+
+- **Total tests**: 377 (354 baseline + 16 image + 7 hero)
+- **Total .py files**: 40+
+- **Total docs**: 9
+- **Site**: https://dopaminews.com (live, HTTPS, Cloudflare Front)
+- **Mock posts**: 108+ (v0.1~v0.10)
+- **License**: Apache 2.0 (code) + dopaminews.com (content)
 
-### Project Structure
-- Python 3.11+ (검증: 3.14.5)
-- 패키지 매니저: pip + venv (uv 권장)
-- 빌드: hatchling
-- 테스트: pytest + pytest-asyncio
-- 린트: ruff
-- **WP 의존성 0개** — 도구 단독 실행 가능
+---
 
-### Notes
-- 도구 우선 빌드 패턴: 운영 중인 WP 사이트 없이 점수화 코어 / SEO 분석 / HTML 파싱 먼저 완성
-- Phase 2~5는 추후 (로드맵 참조)
-- 첫 공개 release. 호환성 깨는 변경은 1.0 이전까지 자유롭게 가능
+## 1차 출처 (Verified)
+
+### Models
+- [Qwen 2.5 7B LICENSE (Apache 2.0)](https://huggingface.co/Qwen/Qwen2.5-7B/blob/main/LICENSE) — 2026-08
+- [Qwen2.5: A Party of Foundation Models](https://qwenlm.github.io/blog/qwen2.5/) — 2026-08
+
+### Image sources
+- [Pexels License](https://www.pexels.com/license/) — 2026-08
+- [Pexels API documentation](https://www.pexels.com/api/documentation/) — 2026-08
+- [Wikimedia Commons Licensing](https://commons.wikimedia.org/wiki/Commons:Licensing) — 2026-08
+- [Wikimedia User-Agent policy](https://meta.wikimedia.org/wiki/User-Agent_policy) — 2026-08
+- [NASA Brand Center: Images and Media](https://www.nasa.gov/nasa-brand-center/images-and-media/) — 2026-08
+
+### NotebookLM
+- [Google blog 2026-07: Better research with NotebookLM](https://blog.google/innovation-and-ai/products/notebooklm/better-research-notebooklm/)
+- [Google blog 2025-08: NotebookLM student features](https://blog.google/innovation-and-ai/models-and-research/google-labs/notebooklm-student-features/)
+- [Workspace Updates 2026-03](https://workspaceupdates.googleblog.com/2026/03/new-ways-to-customize-and-interact-with-your-content-in-NotebookLM.html)
+- [Google blog 한국어: Audio Overview 50+ 언어](https://blog.google/intl/ko-kr/company-news/technology/notebooklm-audio-overviews-50-languages-kr/)
+
+### HTML standards
+- [MDN HTML figure](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/figure) — 2026-08
+
+---
+
+**최종 업데이트**: 2026-08-09 (commit `c7a5c0d` + 1차 출처 검증 기반)

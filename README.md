@@ -1,238 +1,189 @@
-# WP-Free-Blog-Automation
+# WP-auto
 
-> 워드프레스 블로그 자동화 도구 (1인 운영자용, 무료 / 1인 / 도구 우선 빌드)
+> **Dopaminews.com (multi-category news aggregator) — 1인 self-use WordPress 자동화 도구**
 >
-> **도구 우선 빌드** — 점수화 코어 같은 WP-독립 모듈을 먼저 완성하고, WP 연동은 추후.
+> Source-grounded draft (NotebookLM or Qwen 2.5 7B) → 자동 image fetch (Pexels/Wikimedia/NASA) → WP 발행 (Mock or Real)
 
-[![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/wheeljah/wp-auto/blob/main/LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-377%20passed-brightgreen.svg)](./tests/unit)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/Tests-65%20passed-brightgreen.svg)](#테스트)
-[![WP Dependencies](https://img.shields.io/badge/WP%20deps-0-success.svg)](#features)
+[![Qwen 2.5 7B (Apache 2.0)](https://img.shields.io/badge/Model-Qwen%202.5%207B-blue.svg)](https://huggingface.co/Qwen/Qwen2.5-7B)
+[![Code License](https://img.shields.io/badge/Code-Apache%202.0-green.svg)](./LICENSE)
+[![Site](https://img.shields.io/badge/Site-dopaminews.com-orange.svg)](https://dopaminews.com)
 
 ---
 
-## ✨ Features (v0.1.0)
-
-- ✅ **콘텐츠 점수화 (100점 만점)** — 자료 `범용_로직1.txt` L97-272 이식, 19개 단위 테스트
-- ✅ **HTML 파서 (D2)** — BeautifulSoup4로 자동 채움 (15+ 휴리스틱), 21개 테스트
-- ✅ **Rank Math 스타일 SEO 분석기 (D3)** — 100점 (basic 30 / additional 40 / title 15 / content 15), 25개 테스트
-- ✅ **통합 점수 카드 (D4~D7)** — 콘텐츠 + SEO 동시 평가 + 우선순위 권고 10개
-- ✅ **마크다운 리포트** (`--save-report`)
-- ✅ **JSON 출력** (`--json`, CI/CD 연동)
-- ✅ **CLI 4개 명령**: `example`, `doctor`, `verify`, `--full` 통합 모드
-- 🚧 **WP 연동** — Phase 3 (W4) 예정, Mock 우선
-
-> **WP 의존성 0개** — 점수화/SEO/CWV는 실 WP 사이트 없이도 단독 실행.
-
----
-
-## 📦 설치
-
-```bash
-# 1. 가상환경
-python -m venv .venv
-.venv\Scripts\Activate.ps1    # Windows PowerShell
-# source .venv/bin/activate   # macOS/Linux
-
-# 2. 의존성 (editable, dev 포함)
-pip install -e ".[dev]"
-
-# 또는 uv (10배 빠름)
-uv sync --extra dev
-```
-
-## 🚀 빠른 시작
-
-### 환경 진단
-
-```bash
-python -m wp_auto doctor
-# → [OK] click / loguru / pydantic / beautifulsoup4 / lxml
-# → [OK] 점수화 코어 작동
-```
-
-### 콘텐츠 점수화 (자료 `범용_로직1.txt` L246-272 sample)
-
-```bash
-python -m wp_auto example
-# → 총점: 100 / 100, 판정: 우수
-```
-
-### HTML 파일 점수화
-
-```bash
-python -m wp_auto verify tests/fixtures/excellent_post.html --focus-keyword "워드프레스 SEO"
-# → 총점: 77/100, PASS (발행 가능)
-# → 권고: 글자 수 부족, 불필요한 JS/CSS ...
-```
-
-### 통합 점수 카드 (콘텐츠 + SEO)
-
-```bash
-python -m wp_auto verify tests/fixtures/excellent_post.html \
-    --focus-keyword "워드프레스 SEO" --full
-```
+## 🎯 한 줄 요약
 
 ```
-============================================================
-  WP-AUTO 통합 점수 카드 (--full)
-============================================================
-  파일: tests/fixtures/excellent_post.html
-  포커스 키워드: 워드프레스 SEO
-
-┌─ 콘텐츠 품질 (100점) ────────────────────────
-│  총점: 77 / 100  │  content_depth 28  eeat 25  seo 13  speed 11
-└───────────────────────────────────────────────
-
-┌─ SEO 분석 (Rank Math 스타일, 100점) ──────────
-│  총점: 39 / 100  │  basic_seo 4  additional 15  title 10  content 10
-└───────────────────────────────────────────────
-
-┌─ 개선 권고사항 ───────────────────────────────
-│   1. URL/슬러그에 메인 키워드를 포함하세요.
-│   2. Title이 메인 키워드로 시작하면 좋습니다.
-│   3. 메타 설명 길이를 120-160자로 조정하세요.
-│   ...
-│  10. 심층 분석과 가이드를 더 추가하세요.
-└───────────────────────────────────────────────
-
->>> 종합 판정: SEO 보완 필요
-============================================================
+[News URL] → NotebookLM (Blog Post + Nano Banana image) → export .md
+    → inbox/ 저장 → python -m wp_auto publish-md → WP 발행
 ```
 
-### 마크다운 리포트 저장
+또는:
 
-```bash
-python -m wp_auto verify file.html --focus-keyword "X" --full --save-report out/report.md
 ```
-
-### JSON 출력 (CI/CD)
-
-```bash
-python -m wp_auto verify file.html --focus-keyword "X" --full --json | jq '.'
+[Topic + Keyword] → Qwen 2.5 7B (로컬 Ollama) → 자동 image fetch
+    → WebP 변환 + 라이선스 자동 → WP 발행
 ```
 
 ---
 
-## 📊 점수화 시스템
+## 📊 현재 상태 (v0.10.1 + launchers + NotebookLM workflow)
 
-### 콘텐츠 품질 (SpecializedContentOptimizer)
+| 항목 | 값 | 출처 |
+|---|---|---|
+| **Tests** | **377 passed** | `pytest tests/unit` |
+| **모델** | Qwen 2.5 7B (Apache 2.0, 상업용 OK) | [LICENSE](https://huggingface.co/Qwen/Qwen2.5-7B/blob/main/LICENSE) |
+| **Image** | Pexels + Wikimedia + NASA (모두 상업용 무료) | [Pexels](https://www.pexels.com/license/) / [Wikimedia](https://commons.wikimedia.org/wiki/Commons:Licensing) / [NASA](https://www.nasa.gov/nasa-brand-center/images-and-media/) |
+| **Site** | https://dopaminews.com (Cloudflare + InfinityFree) | Live |
 
-| 카테고리 | 배점 | 평가 항목 |
-|---------|-----|----------|
-| Content Depth | 40 | 글자 수, 원본 분석, 단계별 가이드, 데이터/사례, 비교표, FAQ |
-| E-E-A-T | 25 | 1차 경험, 저자 소개, 출처(3+), 업데이트 날짜 |
-| SEO Technical | 20 | 키워드 in 제목, H2(4+), 내부링크(3+), 외부링크(2+), 메타 설명(140-165) |
-| Page Speed | 15 | 이미지 최적화, lazy, 불필요 JS/CSS 제거, LCP ≤ 2.5s |
-
-**합격 기준**:
-- 90+ : 우수 (EXCELLENT)
-- 75~89 : 발행 가능 (PASS)
-- <75 : 보완 필요 (FAIL)
-
-### SEO 분석 (Rank Math 스타일)
-
-| 카테고리 | 배점 | 항목 수 |
-|---------|-----|--------|
-| Basic SEO | 30 | 8개 (URL, title 시작/포함, meta desc, permalink, 첫/마지막 문단) |
-| Additional | 40 | 8개 (H2, density, 첫/마지막 10%, 내부/외부 링크, image alt, url slug) |
-| Title Readability | 15 | 3개 (숫자, power word, 길이 50-60) |
-| Content Readability | 15 | 3개 (600+ 단어, 단락 길이, 모든 img alt) |
+자세한 변경 이력: [CHANGELOG.md](./CHANGELOG.md)
+모든 1차 출처 검증: [CHANGELOG.md § 1차 출처](./CHANGELOG.md#1차-출처-verified)
 
 ---
 
-## 🛠 CLI 명령어
+## 🚀 사용법 (3가지 워크플로우)
 
-| 명령 | 설명 |
-|------|------|
-| `wp-auto --version` | 버전 출력 |
-| `wp-auto doctor` | 환경 + 의존성 + 점수화 코어 점검 |
-| `wp-auto example` | EXCELLENT 케이스 점수화 실행 (자료 원본 sample) |
-| `wp-auto verify <html-file>` | HTML 파일 점수화 (100점 콘텐츠) |
-| `wp-auto verify <html-file> --focus-keyword "X"` | 키워드 자동 체크 |
-| `wp-auto verify <html-file> --full` | **콘텐츠 + SEO 통합 카드** (focus-keyword 필수) |
-| `wp-auto verify <html-file> --json` | JSON 형식 (CI/CD) |
-| `wp-auto verify <html-file> --save-report FILE` | 마크다운 리포트 |
+### A. NotebookLM (source-grounded) — **추천**
+[가이드](./docs/notebooklm_workflow.md)
+
+1. [notebooklm.google.com](https://notebooklm.google.com) → New notebook
+2. News article URL 추가 (출처)
+3. Studio → **Reports → Blog Post** (한국어, 친근한 전문가 톤) → Download as Markdown
+4. Studio → **Image (Nano Banana)** → 16:9 hero → Download PNG
+5. `D:\Google_blog\wp-auto\inbox\<slug>.md` 저장 (frontmatter 보강)
+6. Hero image → `assets/images/<slug>_hero.png`
+7. `python -m wp_auto publish-md inbox/<slug>.md` → WP 발행
+
+### B. Qwen 2.5 7B (현재 워크플로우)
+1. `start-both.bat` 더블클릭 (또는 Desktop .lnk)
+2. 브라우저 `http://127.0.0.1:8767/generate`
+3. Topic + keyword 입력 → `enable_images=true` + `hero_image=true`
+4. Submit → 자동 draft + image + WebP
+5. WP 발행 (Mock 또는 수동)
+
+### C. NotebookLM + wp-auto 하이브리드
+- 글: NotebookLM (source-grounded)
+- Image: Pexels/Wikimedia/NASA (다양성)
+- WP 발행: publish-md 자동화
 
 ---
 
-## ✅ 테스트
+## 🛠️ 설치 / 실행
 
-```bash
-pytest
-# 65 passed in 0.34s
+### 1) PowerShell 2개 창 띄우기
+```powershell
+# 창 1: Ollama
+cd D:\Google_blog\wp-auto
+.\start-ollama.bat
+
+# 창 2: wp-auto UI
+cd D:\Google_blog\wp-auto
+.\start-wp-auto.bat
 ```
 
-세부:
-- `tests/unit/test_content_score.py` — 19개 (점수화 코어)
-- `tests/unit/test_html_parser.py` — 21개 (HTML 파서)
-- `tests/unit/test_seo_analyzer.py` — 25개 (SEO 분석기)
+### 2) 또는 단일 통합 (권장)
+```powershell
+# 한 번 클릭으로 두 서버 동시
+D:\Google_blog\wp-auto\start-both.bat
+```
+
+### 3) Desktop shortcut (1회 setup)
+```powershell
+# Desktop에 "Ollama Server (Google_blog).lnk" + "wp-auto UI (Google_blog).lnk" 생성
+D:\Google_blog\wp-auto\make-shortcuts.bat
+```
+
+### 4) 브라우저
+- **wp-auto UI**: `http://127.0.0.1:8767`
+- **Ollama API**: `http://127.0.0.1:11434` (자동 연결)
 
 ---
 
-## 📂 디렉토리 구조
+## 📁 모듈 구조 (요약)
 
 ```
 wp-auto/
-├── .env.example
-├── .gitignore
-├── CHANGELOG.md
-├── LICENSE                          # MIT (GitHub이 추가)
-├── README.md
-├── pyproject.toml
-├── wp_auto/
-│   ├── __init__.py
-│   ├── __main__.py                  # python -m wp_auto 진입점
-│   ├── cli/
-│   │   ├── main.py                  # example, doctor
-│   │   └── verify.py                # verify (--full 통합)
-│   └── core/
-│       ├── content_score.py         # SpecializedContentOptimizer (Day 1)
-│       ├── html_parser.py           # HTML → ContentMetrics (D2)
-│       └── seo_analyzer.py          # Rank Math 스타일 (D3)
-└── tests/
-    ├── fixtures/
-    │   ├── excellent_post.html
-    │   └── thin_post.html
-    └── unit/
-        ├── test_content_score.py    # 19개
-        ├── test_html_parser.py      # 21개
-        └── test_seo_analyzer.py     # 25개
+├── ai/                 # Qwen 2.5 7B, JSON-LD, affiliate
+├── image/              # v0.10.0+ Pexels + Wikimedia + NASA + PIL infographic
+├── cli/                # ui, publish, publish_md, ingest, verify
+├── core/               # content_score, html_parser, seo_analyzer
+├── optimize/           # image_optimizer (WebP), cwv_measurer
+├── web/                # FastAPI routes
+├── wp/                 # Mock + Real WP client
+├── docs/               # 가이드 (NotebookLM, Affiliate, WP Admin, ...)
+├── inbox/              # NotebookLM export .md (로컬 only)
+├── tests/unit/         # 377 tests
+└── start-both.bat + make-shortcuts.ps1/bat
 ```
 
----
-
-## 🗺 로드맵
-
-| Phase | 상태 | 내용 |
-|------|------|------|
-| **Phase 1: WP-독립 코어** | ✅ 완료 (v0.1.0) | 점수화 + SEO + HTML 파서 + 통합 카드 |
-| Phase 2: AI 초안 + 이미지 (W2~W3) | 🚧 예정 | Ollama + Pillow |
-| Phase 3: WP 연동 (W4) | 🚧 예정 | MockWordPressClient 우선 |
-| Phase 4: 분석 & 리포트 (W5~W6) | 🚧 예정 | GSC API, GitHub Actions |
-| Phase 5: 안정화 (W7~W8) | 🚧 예정 | 테스트 커버리지 80%, 첫 외부 사용자 |
-
-자세한 내용은 [`기획서.md`](./기획서.md) + [`코딩계획서.md`](./코딩계획서.md) (워크스페이스 루트) 참조.
+자세한 architecture: [CHANGELOG.md § 아키텍처](./CHANGELOG.md#%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98)
 
 ---
 
-## 🔧 환경
+## 🔄 워크플로우 3가지 비교
 
-- Python 3.11+ (검증: 3.14.5)
-- 의존성: click, loguru, pydantic, beautifulsoup4, lxml
-- dev: pytest, pytest-asyncio, ruff
-- **WP 의존성 0개** (도구 단독 작동)
+| | NotebookLM (A) | Qwen 7B (B) | Hybrid (C) |
+|---|---|---|---|
+| **출처** | 필요 (URL/PDF) | 불필요 (LLM 지식) | A: NotebookLM + C: Hybrid |
+| **Hallucination** | 낮음 (출처 citation 자동) | 보통 | A: 낮음 / C: 중간 |
+| **한국어** | ✅ 50+ 언어 | ✅ 우수 | ✅ |
+| **무료** | Free tier | ✅ 무제한 (로컬) | ✅ |
+| **Image** | Nano Banana (Google) | Pexels/Wikimedia/NASA | A: Nano Banana + C: Pexels |
+| **Export** | Markdown → publish-md | HTML → publish | Markdown → publish-md |
+| **Hallucination 검증** | 출처 citation 자동 | 수동 (1차 출처 link) | A: 자동 / C: 수동 |
 
-## 📄 License
+---
 
-[MIT](./LICENSE) © 2026 wheeljah
+## 🛠️ 1차 출처 (Verified)
 
-## 🤝 Contributing
+- **모델**: [Qwen 2.5 7B LICENSE (Apache 2.0)](https://huggingface.co/Qwen/Qwen2.5-7B/blob/main/LICENSE)
+- **이미지**: [Pexels License](https://www.pexels.com/license/), [Wikimedia Commons Licensing](https://commons.wikimedia.org/wiki/Commons:Licensing), [NASA Brand Center](https://www.nasa.gov/nasa-brand-center/images-and-media/)
+- **NotebookLM**: [Google blog 2026-07](https://blog.google/innovation-and-ai/products/notebooklm/better-research-notebooklm/)
+- **HTML**: [MDN HTML figure](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/figure)
 
-1인 운영자 도구. 이슈/PR 환영.
+자세한 출처: [CHANGELOG.md § 1차 출처](./CHANGELOG.md#1차-출처-verified)
 
-## 📚 자료
+---
 
-- 점수화 로직 원본: `범용_로직1.txt` (사용자 제공 자료)
-- WP 자동화 트렌드: `워드프레스_자동화1.txt` (사용자 제공 자료)
-- Rank Math 점수 항목: <https://rankmath.com/kb/>
+## ⚠️ 알려진 이슈
+
+| # | 이슈 | 해결 |
+|---|---|---|
+| 1 | **PowerShell 5.1 + 한글 UTF-8 큰 본문 = Latin-1 mojibake** | Python httpx + `Path.write_text(encoding='utf-8')` 사용 |
+| 2 | **Wikimedia API 403** | `User-Agent` 헤더 필수 (이미 source_resolver에 적용) |
+| 3 | **InfinityFree REST API 차단** | WP Admin 수동 publish (Real mode) 또는 Mock mode |
+| 4 | **`D:\Google_blog\wp-auto` OS file lock** (rename 막힘) | 시스템 재시작 후 `Rename-Item D:\Google_blog\wp-auto D:\Google_blog\wp_auto` |
+
+자세한 내용: [CHANGELOG.md § 알려진 이슈](./CHANGELOG.md#%EC%95%8C%EB%A0%A4%EC%A7%84-%EC%9D%B4%EC%8A%88)
+
+---
+
+## 📜 라이선스
+
+- **Code**: Apache 2.0 ([LICENSE](./LICENSE))
+- **Content** (dopaminews.com 발행 글/이미지): dopaminews.com (모든 권리)
+- **사용 모델**: Qwen 2.5 7B (Apache 2.0) — 상업용 무료
+- **사용 image source**:
+  - Pexels License ([pexels.com/license](https://www.pexels.com/license/))
+  - Wikimedia Commons CC0/CC BY/CC BY-SA ([commons.wikimedia.org/wiki/Commons:Licensing](https://commons.wikimedia.org/wiki/Commons:Licensing))
+  - NASA Public Domain (US 정부 저작물, attribution 권장)
+
+---
+
+## 🎯 다음 사이클 (사용자 다음 단계)
+
+1. **시스템 재시작** + `Rename-Item D:\Google_blog\wp-auto D:\Google_blog\wp_auto` (file lock 해제)
+2. **PowerShell 2개 창 띄우기** (또는 Desktop .lnk 더블클릭)
+3. **첫 글 발행** — NotebookLM (A) 또는 Qwen (B)
+4. **5개 generate** (Science & Health, World & Politics, Climate & Environment, Culture & Media) — Tech & AI (v4) + Business & Finance (business_1)는 이미 생성됨
+5. **GSC 등록** + Affiliate 마케팅 (CJ → Amazon → Awin)
+6. **180일 내 $100 commission 목표**
+
+---
+
+**최종 업데이트**: 2026-08-09
+**버전**: v0.10.1 + launchers + NotebookLM workflow
+**테스트**: 377 passed
+**GitHub**: https://github.com/wheeljah/wp-auto
+**Site**: https://dopaminews.com
