@@ -1,0 +1,16 @@
+@echo off
+REM ============================================================
+REM Create 2 desktop shortcuts for Google_blog servers
+REM ============================================================
+REM Usage: make-shortcuts.bat
+REM
+REM Creates 2 .lnk files on your Desktop:
+REM   - "Ollama Server (Google_blog).lnk"
+REM   - "wp-auto UI (Google_blog).lnk"
+REM
+REM One-time setup. Re-run safely if shortcuts are missing.
+REM ============================================================
+
+chcp 65001 >nul
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0make-shortcuts.ps1"
+pause
