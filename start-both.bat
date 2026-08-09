@@ -19,10 +19,10 @@ REM ============================================================
 chcp 65001 >nul
 
 REM Open Ollama server in new window
-start "Ollama Server (Google_blog)" cmd /k "cd /d %~dp0\wp-auto && set OLLAMA_NUM_GPU=0 && set CUDA_VISIBLE_DEVICES=-1 && set OLLAMA_VULKAN=0 && ollama serve"
+start "Ollama Server (Google_blog)" cmd /k "cd /d %~dp0\wp_auto && set OLLAMA_NUM_GPU=0 && set CUDA_VISIBLE_DEVICES=-1 && set OLLAMA_VULKAN=0 && ollama serve"
 
 REM Open wp-auto UI in new window
-start "wp-auto UI (Google_blog)" cmd /k "cd /d %~dp0\wp-auto && set PYTHONIOENCODING=utf-8 && set WP_MOCK=true && .venv\Scripts\python.exe -m wp_auto ui --port 8767"
+start "wp-auto UI (Google_blog)" cmd /k "cd /d %~dp0\wp_auto && set PYTHONIOENCODING=utf-8 && set WP_MOCK=true && .venv\Scripts\python.exe -m wp_auto ui --port 8767"
 
 echo.
 echo  Both servers launched in separate windows.

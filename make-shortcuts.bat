@@ -12,5 +12,8 @@ REM One-time setup. Re-run safely if shortcuts are missing.
 REM ============================================================
 
 chcp 65001 >nul
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0make-shortcuts.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0make-shortcuts.ps1" 2>&1
+if (Test-Path "$env:USERPROFILE\Desktop\Ollama Server (Google_blog).lnk") {
+    echo Desktop shortcuts already exist.
+}
 pause

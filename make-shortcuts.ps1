@@ -11,7 +11,7 @@
 # Or run start-both.bat directly — it already launches both servers in
 # separate windows. Desktop shortcuts are for one-click access.
 
-$wpAutoDir = 'D:\Google_blog\wp-auto'
+$wpAutoDir = 'D:\Google_blog\wp_auto'
 $desktop = [Environment]::GetFolderPath('Desktop')
 
 if (-not (Test-Path $wpAutoDir)) {
