@@ -30,3 +30,9 @@ pixabay.txt
 work/
 scratch/
 oneoff/results/
+
+# NotebookLM export inbox (로컬 콘텐츠 only, Git commit 안 됨)
+inbox/*
+!inbox/README.md
+!inbox/news_template.md
+!inbox/.gitkeep
